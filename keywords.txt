@@ -3,3 +3,5 @@ BigDomeEventHandler	KEYWORD1
 sample	KEYWORD2
 setLedBrightness	KEYWORD2
 setButtonEventHandler	KEYWORD2
+VibrateMotor	KEYWORD1
+setIntensity	KEYWORD2
