@@ -1,1 +1,5 @@
-BigDome KEYWORD1
+BigDomeButton	KEYWORD1
+BigDomeEventHandler	KEYWORD1
+sample	KEYWORD2
+setLedBrightness	KEYWORD2
+setButtonEventHandler	KEYWORD2
