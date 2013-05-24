@@ -82,7 +82,7 @@ RFMessageControl::RFMessageControl(int txPin, int rxPin, int speed)
 }
 
 bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength){
-  MessageQueueItem * item;
+  MessageQueueItem * item = NULL;
   bool succes = getUnusedMessage(item, m_sending);
   if (succes)
   {
@@ -92,11 +92,11 @@ bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t m
 }
 
 bool RFMessageControl::getUnusedMessage(MessageQueueItem * item, MessageQueueItem * queue){
-  findMessage(-1, -1, 0, item, queue);
+  return findMessage(-1, -1, 0, item, queue);
 }
 
 void RFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
-  MessageQueueItem * item;
+  MessageQueueItem * item = NULL;
   if(findMessage(acknowledgement->getChannel(), acknowledgement->getMessageId(), -1, item, m_sending)){
     // only acknowledge if type == MESSAGE and other.type == ACKNOWLEDGE
     //                  or type == CONFIRM and other.type == ACKNOWLEDGE_CONFIRM
@@ -186,4 +186,50 @@ void RFMessageControl::handleIncommingMessages(){}
 void RFMessageControl::update(){
   sendRemainingMessages();
   handleIncommingMessages();
+}
+
+SendTester::SendTester()
+{
+  m_start = 0;
+  m_end = 0;
+}
+
+bool SendTester::send(uint8_t * buf, uint8_t len)
+{
+  Serial.println("SendTester::send");
+  int end = (m_end + 1) % MAXMESSAGECOUNT;
+  bool succes = end != m_start;
+  if (succes){
+    
+    MessageQueueItem item = m_buffer[m_end];
+    memcpy(item.getBuffer(), buf, min(VW_MAX_PAYLOAD, len)); 
+    m_end = end;
+    
+    Serial.print(item.getMessageType());
+    Serial.print(item.getMessageId());
+    Serial.println(item.getChannel());
+  }
+  return succes;
+}
+
+bool SendTester::have_message()
+{
+  
+  Serial.print("SendTester::have_message: ");
+  Serial.println(m_start != m_end);
+  return m_start != m_end;
+}
+bool SendTester::get_message(uint8_t * buf, uint8_t * len)
+{
+  
+  Serial.println("SendTester::get_message");
+  Serial.println(m_start != m_end);
+  bool succes = have_message();
+  if (succes){
+    Serial.println("found");
+    MessageQueueItem item = m_buffer[m_start];
+    memcpy(buf, item.getBuffer(), min(VW_MAX_PAYLOAD, *len)); 
+    m_start = (m_start + 1) % MAXMESSAGECOUNT;
+  }
+  return succes;
 }

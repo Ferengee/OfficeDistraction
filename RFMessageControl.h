@@ -76,6 +76,7 @@ public:
   void sendRemainingMessages();
   void handleIncommingMessages();
   /*
+   * decrementReceivedRetriesLeft if needed
    * sendRemainingMessages()
    * handleIncommingMessages()
    */
@@ -105,6 +106,17 @@ private:
   MessageReceivedEventHandler callback;
 };
 
-
+class SendTester
+{
+public:
+  SendTester();
+  bool send(uint8_t * buf, uint8_t len);
+  bool have_message();
+  bool get_message(uint8_t * buf, uint8_t * len);     
+private:
+  MessageQueueItem m_buffer[MAXMESSAGECOUNT];
+  int m_start;
+  int m_end;
+};
 
 #endif
