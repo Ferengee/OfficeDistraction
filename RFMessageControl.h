@@ -5,7 +5,7 @@
 #include "MessageQueueItem.h"
 #include "BaseSenderReceiver.h"
 
-typedef void (* MessageReceivedEventHandler) (uint8_t channel, uint8_t * message, uint8_t messageLength);
+typedef void (* MessageReceivedEventHandler) (MessageQueueItem * item);
 
 typedef bool (* MessageParameterEquals) (MessageQueueItem * item, uint8_t value);
 
@@ -31,6 +31,8 @@ public:
    */
   bool sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength);
   void acknowledge(MessageQueueItem * acknowledgement);
+  void sendAcknowledge(MessageQueueItem * existing, uint8_t messageType);
+
   /* 
    * iterate queue, 
    * send all messages with  m_retriesLeft > 0
