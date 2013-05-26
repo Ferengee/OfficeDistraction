@@ -5,3 +5,6 @@ setLedBrightness	KEYWORD2
 setButtonEventHandler	KEYWORD2
 VibrateMotor	KEYWORD1
 setIntensity	KEYWORD2
+RFSenderReceiver	KEYWORD1
+TestSenderReceiver	KEYWORD1
+RFMessageControl	KEYWORD1
