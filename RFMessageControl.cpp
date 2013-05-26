@@ -1,103 +1,33 @@
 #include "RFMessageControl.h"
+#include <sys/types.h>
 #include "Arduino.h"
 
-MessageQueueItem::MessageQueueItem()
+
+RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
 {
-}
-
-
-void MessageQueueItem::setMessageType(uint8_t messageType){
-  m_messageBuffer[0] = messageType;
-}
-
-uint8_t MessageQueueItem::getMessageType(){
-  return m_messageBuffer[0];
-}
-
-void MessageQueueItem::setChannel(uint8_t channel){
-  m_messageBuffer[1] = channel;
-}
-void MessageQueueItem::setMessageId(uint8_t messageId){
-  m_messageBuffer[2] = messageId;
-}
-uint8_t MessageQueueItem::getMessageId(){
-  return m_messageBuffer[2];
-}
-
-void MessageQueueItem::setRetriesLeft(uint8_t retries){
-  m_messageBuffer[3] = retries;
-}
-
-uint8_t * MessageQueueItem::getBuffer(){
-  return m_messageBuffer;
-}
-
-void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
-  memcpy(message, m_messageBuffer + MESSAGE_HEADER_LENGTH,min(MESSAGE_BUFFER_SIZE, *length));
-}
-
-
-void MessageQueueItem::decrementRetriesLeft()
-{
-   m_messageBuffer[3]--;
-}
-void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength)
-{
-  setMessageType(MESSAGE);
-  setChannel(channel);
-  setMessageId(messageId);
-  setRetriesLeft(MAXRETRIES);
-  
-  int i;
-  for (i=MESSAGE_HEADER_LENGTH; i < MESSAGE_BUFFER_SIZE + MESSAGE_HEADER_LENGTH; i++)
-  {
-     m_messageBuffer[i] = 0;
-  }
-  
-  memcpy(m_messageBuffer + MESSAGE_HEADER_LENGTH, message, min(MESSAGE_BUFFER_SIZE, messageLength)); 
-}
-
-void MessageQueueItem::destroy()
-{
-  setRetriesLeft(0);
-}
-
-void MessageQueueItem::acknowledge(uint8_t acknowledgementType)
-{
-  if(getMessageType() == MESSAGE && acknowledgementType == ACKNOWLEDGE){
-    setMessageType(CONFIRM);
-    setRetriesLeft(MAXRETRIES);
-  } else if(getMessageType() == CONFIRM && acknowledgementType == ACKNOWLEDGE_CONFIRM) {
-    destroy();
-  }
-}
-
-RFMessageControl::RFMessageControl(int txPin, int rxPin, int speed)
-{
-  vw_set_tx_pin ((uint8_t)txPin);
-  vw_set_rx_pin ((uint8_t)rxPin);
-  vw_set_ptt_inverted(true);
-  vw_setup ((uint16_t)speed);
-  vw_rx_start();   
+  m_transceiver = transceiver;
+  m_lastDecrementRun = 0;
+  m_lastMessageId = 0;
 }
 
 bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength){
   MessageQueueItem * item = NULL;
-  bool succes = getUnusedMessage(item, m_sending);
+  Serial.println("RFMessageControl::sendMessage");
+  bool succes = getUnusedMessage(&item, m_sending);
   if (succes)
   {
-    item->init(channel, m_lastMessageId++, message, messageLength);
+    item->init(channel, m_lastMessageId++, message, messageLength);    
   }
   return succes;
 }
 
-bool RFMessageControl::getUnusedMessage(MessageQueueItem * item, MessageQueueItem * queue){
+bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueItem * queue){
   return findMessage(-1, -1, 0, item, queue);
 }
 
 void RFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
   MessageQueueItem * item = NULL;
-  if(findMessage(acknowledgement->getChannel(), acknowledgement->getMessageId(), -1, item, m_sending)){
+  if(findMessage(acknowledgement->getChannel(), acknowledgement->getMessageId(), -1, &item, m_sending)){
     // only acknowledge if type == MESSAGE and other.type == ACKNOWLEDGE
     //                  or type == CONFIRM and other.type == ACKNOWLEDGE_CONFIRM
     item->acknowledge(acknowledgement->getMessageType());
@@ -119,7 +49,7 @@ bool MessageRetriesLeftEquals(MessageQueueItem * item, uint8_t retriesLeft)
   return item->getRetriesLeft() == retriesLeft;
 }
 
-bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, MessageQueueItem * item, MessageQueueItem * queue)
+bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, MessageQueueItem ** item, MessageQueueItem * queue)
 {
   MessageParameterEquals testFunctions[3];
   uint8_t values[3];
@@ -147,6 +77,8 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
   
   for (i=0; i < MAXMESSAGECOUNT; i++)
   {
+    printf("searching queue ");
+    printf("index: %d ", i);
     candidate = &queue[i];
     found = true;
     for(f=0; f < testCount; f++){
@@ -156,7 +88,7 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
       }
     }
     if(found){
-      item = candidate;
+      *item = candidate;
       break; 
     }
   }
@@ -178,58 +110,59 @@ void RFMessageControl::sendRemainingMessages(){
 /* sent full buffer for now
  * optimize to send only relevant data later
  */
-void send(MessageQueueItem * item){
-  uint8_t length = VW_MAX_PAYLOAD;
-  vw_send(item->getBuffer(),length);
+void RFMessageControl::send(MessageQueueItem * item){
+  uint8_t length = MESSAGE_BUFFER_SIZE;
+  m_transceiver->send(item->getBuffer(),length);
 }
-void RFMessageControl::handleIncommingMessages(){}
+
+void RFMessageControl::handleIncommingMessages(){
+  /*
+   * has_new_message = vw_get_message (buf, len)
+   * convert buffer to MessageQueueItem
+   * check message type
+   * if type == ACKNOWLEDGE || type == ACKNOWLEDGE_CONFIRM => acknowledge(item)
+   * if type == MESSAGE || type == CONFIRM =>
+   *  check message channel == ours // still have to implement setting our channel
+   *  if type == MESSAGE => remember message, send ACKNOWLEDGE
+   *  if type == CONFIRM => forget message, send ACKNOWLEDGE_CONFIRM, call callback function            
+   */
+    uint8_t buffer[MESSAGE_BUFFER_SIZE];
+    MessageQueueItem * item;
+    uint8_t length = MESSAGE_BUFFER_SIZE;
+    while (m_transceiver->get_message(buffer, &length)){
+      
+    }
+    
+  
+}
+
+void RFMessageControl::decrementReceivedMessagesRetriesLeft()
+{
+  MessageQueueItem * item;
+  int i;
+  for (i=0; i < MAXMESSAGECOUNT; i++)
+  {
+     item = &m_received[i];
+     if (item->getRetriesLeft() > 0){
+       item->decrementRetriesLeft();
+     }
+  }
+}
+
 void RFMessageControl::update(){
+  unsigned long now = millis();
+  int deltaT = now - m_lastDecrementRun;
+  if (deltaT > 1000){
+    decrementReceivedMessagesRetriesLeft();
+  }
   sendRemainingMessages();
   handleIncommingMessages();
 }
 
-SendTester::SendTester()
-{
-  m_start = 0;
-  m_end = 0;
+uint8_t RFMessageControl::getChannel(){
+  return m_ourChannel;
 }
-
-bool SendTester::send(uint8_t * buf, uint8_t len)
-{
-  Serial.println("SendTester::send");
-  int end = (m_end + 1) % MAXMESSAGECOUNT;
-  bool succes = end != m_start;
-  if (succes){
-    
-    MessageQueueItem item = m_buffer[m_end];
-    memcpy(item.getBuffer(), buf, min(VW_MAX_PAYLOAD, len)); 
-    m_end = end;
-    
-    Serial.print(item.getMessageType());
-    Serial.print(item.getMessageId());
-    Serial.println(item.getChannel());
-  }
-  return succes;
+void RFMessageControl::setChannel(uint8_t channel){
+  m_ourChannel = channel;
 }
-
-bool SendTester::have_message()
-{
   
-  Serial.print("SendTester::have_message: ");
-  Serial.println(m_start != m_end);
-  return m_start != m_end;
-}
-bool SendTester::get_message(uint8_t * buf, uint8_t * len)
-{
-  
-  Serial.println("SendTester::get_message");
-  Serial.println(m_start != m_end);
-  bool succes = have_message();
-  if (succes){
-    Serial.println("found");
-    MessageQueueItem item = m_buffer[m_start];
-    memcpy(buf, item.getBuffer(), min(VW_MAX_PAYLOAD, *len)); 
-    m_start = (m_start + 1) % MAXMESSAGECOUNT;
-  }
-  return succes;
-}
