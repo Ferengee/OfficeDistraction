@@ -65,6 +65,12 @@ void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * messag
   memcpy(m_messageBuffer + MESSAGE_HEADER_LENGTH, message, min(MESSAGE_SIZE, messageLength)); 
 }
 
+void MessageQueueItem::init(uint8_t * messageBuffer)
+{
+  memcpy(m_messageBuffer , messageBuffer, MESSAGE_BUFFER_SIZE); 
+}
+
+
 void MessageQueueItem::destroy()
 {
   setRetriesLeft(0);
@@ -78,5 +84,10 @@ void MessageQueueItem::acknowledge(uint8_t acknowledgementType)
   } else if(getMessageType() == CONFIRM && acknowledgementType == ACKNOWLEDGE_CONFIRM) {
     destroy();
   }
+}
+
+void MessageQueueItem::transition(uint8_t acknowledgementType){
+  setMessageType(acknowledgementType);
+  setRetriesLeft(1);
 }
 

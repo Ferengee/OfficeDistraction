@@ -8,6 +8,8 @@ class MessageQueueItem
 public:
   MessageQueueItem();
   void init (uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength);
+  void init(uint8_t * messageBuffer);
+
   void destroy();
   
   void getMessage(uint8_t * message, uint8_t * length);
@@ -22,7 +24,8 @@ public:
   
   void decrementRetriesLeft();
   void acknowledge(uint8_t acknowledgementType);
-  
+  void transition(uint8_t acknowledgementType);
+
 private:  
   void setMessageType(uint8_t messageType);
   
