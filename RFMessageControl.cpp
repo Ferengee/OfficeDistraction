@@ -196,6 +196,7 @@ void RFMessageControl::update(){
   int deltaT = now - m_lastDecrementRun;
   if (deltaT > 1000){
     decrementReceivedMessagesRetriesLeft();
+    m_lastDecrementRun = now;
   }
   sendRemainingMessages();
   handleIncommingMessages();
