@@ -1,4 +1,5 @@
 #include "RFMessageControl.h"
+#include "MessageQueueSorter.h"
 #include <sys/types.h>
 #include "Arduino.h"
 
@@ -21,6 +22,8 @@ bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t m
 }
 
 bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueItem * queue){
+  // should be sorter.getUnusedMessage()
+  
   return findMessage(-1, -1, 0, item, queue);
 }
 

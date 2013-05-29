@@ -91,3 +91,8 @@ void MessageQueueItem::transition(uint8_t acknowledgementType){
   setRetriesLeft(1);
 }
 
+bool MessageQueueItem::isDestroyed()
+{
+  return getRetriesLeft() < 1;
+}
+

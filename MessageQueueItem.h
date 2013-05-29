@@ -11,6 +11,7 @@ public:
   void init(uint8_t * messageBuffer);
 
   void destroy();
+  bool isDestroyed();
   
   void getMessage(uint8_t * message, uint8_t * length);
   
