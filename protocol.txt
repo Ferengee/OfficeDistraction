@@ -1,0 +1,39 @@
+remote function call
+
+void dispatchRFC(uint8_t * msg){
+  uint8_t functionId = msg[0];
+  rfc[functionId](msg[1],msg + 2);
+
+}
+
+message: 
+  uint8_t functionId,
+  uint8_t arglength,
+  uint8_t args[arglength]
+
+receiver functions
+typedef void (* rfc)(
+  uint8_t arglength,
+  uint8_t args[arglength]
+)
+
+
+rfc rfcs[MAXCALLBACKFUNCTIONS]
+decode message
+lookup function with functionId
+
+call function with arglength, args
+
+function knows how to decode args
+
+void vibrateRfc(uint8_t length, uint8_t * msg){
+  uint8_t intensity;
+  uint8_t duration; 
+
+  if(length > 2){
+    uint8_t intensity = msg[0];
+    uint8_t duration = msg[1];
+    vibrate(intensity, duration);
+  }
+
+}
