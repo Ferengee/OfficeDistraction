@@ -3,6 +3,8 @@
 #include "Arduino.h"
 #include "OfficeDistractionConfig.h"
 #include "MessageQueueItem.h"
+#include "MessageQueueSorter.h"
+
 #include "BaseSenderReceiver.h"
 
 typedef void (* MessageReceivedEventHandler) (MessageQueueItem * item);
@@ -55,6 +57,11 @@ public:
 private:
   MessageQueueItem m_sending[MAXMESSAGECOUNT];
   MessageQueueItem m_received[MAXMESSAGECOUNT];
+ 
+  MessageQueueSorter m_sendingSorter;
+  MessageQueueSorter m_receivedSorter;
+
+
   /*
    * Encode the MessageQueueItem over the wire
    */
@@ -64,7 +71,7 @@ private:
    * init to MAXRETRIES
    * to be used in sendMessage
    */
-  bool getUnusedMessage(MessageQueueItem ** item,  MessageQueueItem * queue);
+  bool getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter);
   /* 
    * find the message which corresponds with the given parameters
    * If more than one message matches the parameters, the first one is returned

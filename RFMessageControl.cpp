@@ -1,5 +1,4 @@
 #include "RFMessageControl.h"
-#include "MessageQueueSorter.h"
 #include <sys/types.h>
 #include "Arduino.h"
 
@@ -9,11 +8,14 @@ RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
   m_transceiver = transceiver;
   m_lastDecrementRun = 0;
   m_lastMessageId = 0;
+  m_sendingSorter.init(m_sending);
+  m_receivedSorter.init(m_received);
+
 }
 
 bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength){
   MessageQueueItem * item = NULL;
-  bool succes = getUnusedMessage(&item, m_sending);
+  bool succes = getUnusedMessage(&item, &m_sendingSorter);
   if (succes)
   {
     item->init(channel, m_lastMessageId++, message, messageLength);    
@@ -21,10 +23,10 @@ bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t m
   return succes;
 }
 
-bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueItem * queue){
+bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter){
   // should be sorter.getUnusedMessage()
-  
-  return findMessage(-1, -1, 0, item, queue);
+  return sorter->getUnusedItem(item);
+  //return findMessage(-1, -1, 0, item, queue);
 }
 
 void RFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
@@ -95,18 +97,36 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
   return found;
 }
 
+/*
+ * create a map of booleans and flag if a channel has been seen
+ * send only one message per channel in each run
+ */
 void RFMessageControl::sendRemainingMessages(){
   MessageQueueItem * item;
+  MessageQueueItem ** sortedQueue = m_sendingSorter.reorder();
+  bool channelSeen[MAXMESSAGECOUNT] = {false};
   int i;
+  int j;
   for (i=0; i < MAXMESSAGECOUNT; i++)
   {
-     item = &m_sending[i];
-     if (item->getRetriesLeft() > 0){
-       item->decrementRetriesLeft();
-       send(item);
-     }
+    item = sortedQueue[i];
+    if(!channelSeen[i]){
+      /* update the rest of the channelSeen map */
+      for(j=i; j < MAXMESSAGECOUNT; j++)
+      {
+        if(sortedQueue[j]->getChannel() == item->getChannel()){
+          channelSeen[j] = true; // dont acidently set it to false if it was true already
+        }
+      }
+      if (item->getRetriesLeft() > 0){
+        item->decrementRetriesLeft();
+        send(item);
+      }
+    }
   }
+  m_sendingSorter.reorder();
 }
+
 /* sent full buffer for now
  * optimize to send only relevant data later
  */
@@ -159,7 +179,7 @@ void RFMessageControl::handleIncommingMessages(){
       if(messageType == MESSAGE){
 
         if(!found){
-          found = getUnusedMessage(&existing, m_received);
+          found = getUnusedMessage(&existing, &m_receivedSorter);
           if(found){
             existing->init(buffer);
           }
@@ -178,6 +198,7 @@ void RFMessageControl::handleIncommingMessages(){
       }
     }
   }
+  m_receivedSorter.reorder();
 }
 
 
