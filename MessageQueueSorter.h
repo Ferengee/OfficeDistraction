@@ -7,7 +7,9 @@
 class MessageQueueSorter
 {
 public:
-  MessageQueueSorter(MessageQueueItem * queue);
+  MessageQueueSorter();
+  void init(MessageQueueItem * queue);
+
   /*
    * Sets item to point to the next available item
    * Returns true on succes
