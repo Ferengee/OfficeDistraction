@@ -31,7 +31,7 @@ public:
    * returns false if the queue is full 
    * 
    */
-  bool sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength);
+  bool sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength);
   void acknowledge(MessageQueueItem * acknowledgement);
   void sendAcknowledge(MessageQueueItem * existing, uint8_t messageType);
 
@@ -50,9 +50,15 @@ public:
   void decrementReceivedMessagesRetriesLeft();
   
   void setMessageReceivedEventHandler(MessageReceivedEventHandler eh);
-  uint8_t getChannel();
+  uint8_t getChannelID();
+  /*
+   * channel = (sender|receiver) for MESSAGE and CONFIRM types of messages
+   * channel = (receiver|sender) for ACKNOWLEDGE types of messages
+   */
+  uint8_t getChannel(uint8_t toChannelID);
   void setChannel(uint8_t channel);
-  
+  void setChannelID(uint8_t channelID);
+
 
 private:
   MessageQueueItem m_sending[MAXMESSAGECOUNT];
@@ -78,11 +84,24 @@ private:
    * if a parameter is set to -1, this parameter is ignored
    */
   bool findMessage(int channel, int messageId, int retriesLeft, MessageQueueItem ** item, MessageQueueItem * queue);
+  /* returns true for a MessageQueueItem item.getChannel() where item type is MESSAGE or CONFIRM
+   * which is send to us
+   * 
+   * for the acknowledge type of MessageQueueItems the channel is the same from the message they acknowledge
+   * so from their perspective sender and receiver are in reverse order. 
+   */
+  bool toUs(uint8_t channel);
+  /*
+   * returns true if we send the original message
+   * so it also returns true on a received acknowledgement which was send in reply to one of our messages.
+   */
+  bool fromUs(uint8_t channel);
+
   uint8_t m_lastMessageId;
   unsigned long m_lastDecrementRun;
   MessageReceivedEventHandler callback;
   
-  uint8_t m_ourChannel;
+  uint8_t m_ourChannelID;
   BaseSenderReceiver * m_transceiver;
 };
 

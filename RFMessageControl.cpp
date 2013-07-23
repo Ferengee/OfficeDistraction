@@ -13,8 +13,9 @@ RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
 
 }
 
-bool RFMessageControl::sendMessage(uint8_t channel, uint8_t * message, uint8_t messageLength){
+bool RFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
   MessageQueueItem * item = NULL;
+  uint8_t channel = getChannel(toChannelID);
   bool succes = getUnusedMessage(&item, &m_sendingSorter);
   if (succes)
   {
@@ -140,6 +141,22 @@ void RFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t mess
   send(existing);
 }
 
+/*
+ *  channel = sender|receiver
+ *     8Bit =   4Bit|4Bit
+ */
+bool RFMessageControl::toUs(uint8_t channel)
+{
+  uint8_t receiver =  channel & 0xF;
+  return receiver == m_ourChannelID;
+}
+
+bool RFMessageControl::fromUs(uint8_t channel)
+{
+  uint8_t sender = (channel >> 4) & 0xF;
+  return sender == m_ourChannelID;
+
+}
 
 void RFMessageControl::handleIncommingMessages(){
   /*
@@ -171,8 +188,10 @@ void RFMessageControl::handleIncommingMessages(){
 
     if(messageType == ACKNOWLEDGE || messageType == ACKNOWLEDGE_CONFIRM){
     acknowledge(&received);
-    } else if(channel == m_ourChannel){
-
+    } else if(toUs(channel)){
+      //TODO: refactor channel == m_ourChannel into a method call
+      // channel should be made up of (sender|receiver) and not just (receiver)
+      
       /* lookup if we already have that message */
       bool found = findMessage(channel, messageId, -1, &existing, m_received);
 
@@ -226,11 +245,21 @@ void RFMessageControl::update(){
   handleIncommingMessages();
 }
 
-uint8_t RFMessageControl::getChannel(){
-  return m_ourChannel;
+uint8_t RFMessageControl::getChannelID(){
+  return m_ourChannelID;
 }
-void RFMessageControl::setChannel(uint8_t channel){
-  m_ourChannel = channel;
+
+/*
+ *  channel = sender|receiver
+ *     8Bit =   4Bit|4Bit
+ */
+uint8_t RFMessageControl::getChannel(uint8_t toChannelID){
+  return ((m_ourChannelID & 0xF) << 4) | (toChannelID & 0xF);
+  
+}
+
+void RFMessageControl::setChannelID(uint8_t channelId){
+  m_ourChannelID = channelId;
 }
 
 void RFMessageControl::setMessageReceivedEventHandler(MessageReceivedEventHandler eh){
