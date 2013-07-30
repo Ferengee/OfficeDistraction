@@ -7,7 +7,7 @@
 
 #include "BaseSenderReceiver.h"
 
-typedef void (* MessageReceivedEventHandler) (MessageQueueItem * item);
+typedef void (* MessageReceivedEventHandler) (MessageQueueItem item);
 
 typedef bool (* MessageParameterEquals) (MessageQueueItem * item, uint8_t value);
 

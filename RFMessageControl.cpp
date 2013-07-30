@@ -209,7 +209,7 @@ void RFMessageControl::handleIncommingMessages(){
         if(found){
           sendAcknowledge(existing, ACKNOWLEDGE_CONFIRM);
           if(callback != NULL){
-            callback(existing);
+            callback(*existing);
           }
           existing->destroy();
         }
