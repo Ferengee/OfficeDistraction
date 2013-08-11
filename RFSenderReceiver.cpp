@@ -10,3 +10,19 @@ RFSenderReceiver::RFSenderReceiver(int txPin, int rxPin, int speed)
     vw_rx_start(); 
   } 
 }
+
+bool RFSenderReceiver::get_message(uint8_t* buf, uint8_t* len)
+{
+  return vw_get_message(buf, len);
+}
+
+bool RFSenderReceiver::have_message()
+{
+  return vw_have_message();
+}
+
+bool RFSenderReceiver::send(uint8_t* buf, uint8_t len)
+{
+  return vw_send(buf, len);
+}
+
