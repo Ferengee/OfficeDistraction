@@ -1,10 +1,10 @@
 #ifndef RFSenderReceiver_h
 #define RFSenderReceiver_h
 #include "Arduino.h"
-#include "../VirtualWire/VirtualWire.h"
+#include <VirtualWire.h>
 #include "BaseSenderReceiver.h"
 
-class RFSenderReceiver
+class RFSenderReceiver : public BaseSenderReceiver
 {
 public:
   RFSenderReceiver(int txPin, int rxPin, int speed);
