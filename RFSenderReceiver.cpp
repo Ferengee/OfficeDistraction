@@ -1,6 +1,6 @@
 #include "RFSenderReceiver.h"
 
-RFSenderReceiver::RFSenderReceiver(int txPin, int rxPin, int speed)
+void RFSenderReceiver::init(int txPin, int rxPin, int speed)
 {
   if (speed > 0){
     vw_set_tx_pin ((uint8_t)txPin);
@@ -11,6 +11,7 @@ RFSenderReceiver::RFSenderReceiver(int txPin, int rxPin, int speed)
   } 
 }
 
+
 bool RFSenderReceiver::get_message(uint8_t* buf, uint8_t* len)
 {
   return vw_get_message(buf, len);
@@ -19,10 +20,17 @@ bool RFSenderReceiver::get_message(uint8_t* buf, uint8_t* len)
 bool RFSenderReceiver::have_message()
 {
   return vw_have_message();
+  
 }
 
 bool RFSenderReceiver::send(uint8_t* buf, uint8_t len)
 {
-  return vw_send(buf, len);
+  bool success = vw_send(buf, len);
+ // vw_wait_tx(); // 
+  return success;
 }
 
+RFSenderReceiver::RFSenderReceiver()
+{
+
+}
