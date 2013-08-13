@@ -4,7 +4,7 @@
 #include "../VirtualWire/VirtualWire.h"
 #include "BaseSenderReceiver.h"
 
-class RFSenderReceiver
+class RFSenderReceiver : public BaseSenderReceiver
 {
 public:
   RFSenderReceiver(int txPin, int rxPin, int speed);

@@ -8,7 +8,7 @@ class MessageQueueItem
 public:
   MessageQueueItem();
   void init (uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength);
-  void init(uint8_t * messageBuffer);
+  void init(uint8_t* messageBuffer, uint8_t length);
 
   void destroy();
   bool isDestroyed();
@@ -26,6 +26,7 @@ public:
   void decrementRetriesLeft();
   void acknowledge(uint8_t acknowledgementType);
   void transition(uint8_t acknowledgementType);
+  uint8_t getLength();
 
 private:  
   void setMessageType(uint8_t messageType);
@@ -35,6 +36,7 @@ private:
   void setMessageId(uint8_t messageId);
   
   void setRetriesLeft(uint8_t retries);
+  uint8_t m_messageLength;
 
   uint8_t m_messageBuffer[MESSAGE_BUFFER_SIZE]; // about 30 - (3 ) = 27 bytes
 };

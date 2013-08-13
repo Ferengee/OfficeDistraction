@@ -131,7 +131,7 @@ void RFMessageControl::sendRemainingMessages(){
  * optimize to send only relevant data later
  */
 void RFMessageControl::send(MessageQueueItem * item){
-  uint8_t length = MESSAGE_BUFFER_SIZE;
+  uint8_t length = item->getLength() + MESSAGE_HEADER_LENGTH;
   m_transceiver->send(item->getBuffer(),length);
 }
 
@@ -173,7 +173,7 @@ void RFMessageControl::handleIncommingMessages(){
   MessageQueueItem * existing;
   uint8_t length = MESSAGE_BUFFER_SIZE;
   while (m_transceiver->get_message(buffer, &length)){
-    received.init(buffer);
+    received.init(buffer, length);
     uint8_t messageType = received.getMessageType(); 
     uint8_t messageId = received.getMessageId();
     uint8_t channel = received.getChannel();
@@ -199,7 +199,7 @@ void RFMessageControl::handleIncommingMessages(){
         if(!found){
           found = getUnusedMessage(&existing, &m_receivedSorter);
           if(found){
-            existing->init(buffer);
+            existing->init(buffer, length);
           }
         }
         if(found){

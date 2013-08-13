@@ -37,7 +37,7 @@ uint8_t * MessageQueueItem::getBuffer(){
 }
 
 void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
-  uint8_t toCopy = min(MESSAGE_SIZE, *length);
+  uint8_t toCopy = min(m_messageLength, *length);
 
   memcpy(message, m_messageBuffer + MESSAGE_HEADER_LENGTH, toCopy);
   *length = toCopy;
@@ -61,13 +61,19 @@ void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * messag
   setChannel(channel);
   setMessageId(messageId);
   setRetriesLeft(MAXRETRIES);
-  
-  memcpy(m_messageBuffer + MESSAGE_HEADER_LENGTH, message, min(MESSAGE_SIZE, messageLength)); 
+  m_messageLength =  min(MESSAGE_SIZE, messageLength);
+  memcpy(m_messageBuffer + MESSAGE_HEADER_LENGTH, message, m_messageLength); 
 }
 
-void MessageQueueItem::init(uint8_t * messageBuffer)
+void MessageQueueItem::init(uint8_t * messageBuffer, uint8_t length)
 {
+  m_messageLength = length;
   memcpy(m_messageBuffer , messageBuffer, MESSAGE_BUFFER_SIZE); 
+}
+
+uint8_t MessageQueueItem::getLength()
+{
+  return m_messageLength;
 }
 
 
