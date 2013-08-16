@@ -13,10 +13,9 @@ int buttonPin = A0;
 BigDomeButton button = BigDomeButton(pwmLedPin, buttonPin);
 void  buttonEvent (bool pressed){
   if (pressed)
-    Serial.println("{'class': 'ButtonDownEvent'}");
+    Serial.println("{\"class\": \"ButtonDownEvent\"}");
    else
-    Serial.println("{'class': 'ButtonUpEvent'}");
-    
+    Serial.println("{\"class\": \"ButtonUpEvent\"}");   
 }
 
 class RemoteControlledLed : public MiniRPCMethod
@@ -41,8 +40,7 @@ public:
   }
 
   virtual void error(){
-    Serial.println("Error in parsing arguments");
-    Serial.println("Expected: led(<pin>, <intensity>)");
+    Serial.println("{\"class\": \"ArgumentException\", \"message\":\"Expected: led(<pin>, <intensity>)\"}");
   }
     
 
