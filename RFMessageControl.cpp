@@ -9,13 +9,13 @@ RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
   m_lastMessageId = 0;
   m_sendingSorter.init(m_sending);
   m_receivedSorter.init(m_received);
-
+  notifyDiscartedItem = NULL;
 }
 
 bool RFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
   MessageQueueItem * item = NULL;
   uint8_t channel = getChannel(toChannelID);
-  bool succes = getUnusedMessage(&item, &m_sendingSorter);
+  bool succes = m_sendingSorter.getUnusedItem(&item);
   if (succes)
   {
     item->init(channel, m_lastMessageId++, message, messageLength);    
@@ -24,7 +24,7 @@ bool RFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8
 }
 
 bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter){
-  // should be sorter.getUnusedMessage()
+  // should be sorter->getUnusedMessage()
   return sorter->getUnusedItem(item);
   //return findMessage(-1, -1, 0, item, queue);
 }
@@ -177,19 +177,10 @@ void RFMessageControl::handleIncommingMessages(){
     uint8_t messageType = received.getMessageType(); 
     uint8_t messageId = received.getMessageId();
     uint8_t channel = received.getChannel();
-   /* Serial.print("received: T:");
-    Serial.print(messageType);
-    Serial.print(" id:");
-    Serial.print(messageId);
-    Serial.print(" ch:");
-    Serial.println(channel);
-    */
-
+    
     if(messageType == ACKNOWLEDGE || messageType == ACKNOWLEDGE_CONFIRM){
-    acknowledge(&received);
+      acknowledge(&received);
     } else if(toUs(channel)){
-      //TODO: refactor channel == m_ourChannel into a method call
-      // channel should be made up of (sender|receiver) and not just (receiver)
       
       /* lookup if we already have that message */
       bool found = findMessage(channel, messageId, -1, &existing, m_received);
@@ -197,7 +188,7 @@ void RFMessageControl::handleIncommingMessages(){
       if(messageType == MESSAGE){
 
         if(!found){
-          found = getUnusedMessage(&existing, &m_receivedSorter);
+          found = m_receivedSorter.getUnusedItem(&existing);
           if(found){
             existing->init(buffer);
           }
@@ -205,12 +196,12 @@ void RFMessageControl::handleIncommingMessages(){
         if(found){
           sendAcknowledge(existing, ACKNOWLEDGE);
         }
-            } else if (messageType == CONFIRM){
+      } else if (messageType == CONFIRM){
         if(found){
-          sendAcknowledge(existing, ACKNOWLEDGE_CONFIRM);
-          if(callback != NULL){
+          if(callback != NULL && !existing->isDestroyed()){
             callback(*existing);
           }
+          sendAcknowledge(existing, ACKNOWLEDGE_CONFIRM);
           existing->destroy();
         }
       }
@@ -224,11 +215,15 @@ void RFMessageControl::decrementReceivedMessagesRetriesLeft()
 {
   MessageQueueItem * item;
   int i;
+  int retriesLeft;
   for (i=0; i < MAXMESSAGECOUNT; i++)
   {
      item = &m_received[i];
      if (item->getRetriesLeft() > 0){
        item->decrementRetriesLeft();
+       retriesLeft = item->getRetriesLeft();
+       if(retriesLeft == 0 && notifyDiscartedItem != NULL)
+         notifyDiscartedItem(item);
      }
   }
 }

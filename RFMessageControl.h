@@ -11,6 +11,10 @@ typedef void (* MessageReceivedEventHandler) (MessageQueueItem item);
 
 typedef bool (* MessageParameterEquals) (MessageQueueItem * item, uint8_t value);
 
+typedef void (* NotifyDiscartedItem)(MessageQueueItem* item);
+
+
+
 /*
  * send messages via sendMessage()
  * receive messages via the MessageReceivedEventHandler callback
@@ -59,6 +63,7 @@ public:
   void setChannel(uint8_t channel);
   void setChannelID(uint8_t channelID);
 
+  NotifyDiscartedItem notifyDiscartedItem;
 
 private:
   MessageQueueItem m_sending[MAXMESSAGECOUNT];
