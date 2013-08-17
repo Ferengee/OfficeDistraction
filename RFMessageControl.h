@@ -60,7 +60,6 @@ public:
    * channel = (receiver|sender) for ACKNOWLEDGE types of messages
    */
   uint8_t getChannel(uint8_t toChannelID);
-  void setChannel(uint8_t channel);
   void setChannelID(uint8_t channelID);
 
   NotifyDiscartedItem notifyDiscartedItem;
