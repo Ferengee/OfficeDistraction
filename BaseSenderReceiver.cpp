@@ -51,7 +51,7 @@ bool TestSenderReceiver::receive(uint8_t * buf, uint8_t len)
     Serial.println((char *)buffer);
 
     
-    if ((m_sendcount % 5) == 0 ||(m_sendcount % 6) == 2){
+    if (m_sendcount > 10 && ((m_sendcount % 5) == 0 ||(m_sendcount % 6) == 2)){
       Serial.print("  - dropped message message: ");
       Serial.print(incommingItem.getMessageId());
       Serial.print(":");
