@@ -178,7 +178,7 @@ void RFMessageControl::handleIncommingMessages(){
     uint8_t messageId = received.getMessageId();
     uint8_t channel = received.getChannel();
     
-    if(messageType == ACKNOWLEDGE || messageType == ACKNOWLEDGE_CONFIRM){
+    if(fromUs(channel) && (messageType == ACKNOWLEDGE || messageType == ACKNOWLEDGE_CONFIRM)){
       acknowledge(&received);
     } else if(toUs(channel)){
       
