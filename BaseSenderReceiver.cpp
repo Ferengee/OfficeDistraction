@@ -27,6 +27,7 @@ bool TestSenderReceiver::receive(uint8_t * buf, uint8_t len)
   m_sendcount++;
   //Serial.println("TestSenderReceiver::send");
   uint8_t buffer[40];
+  memset(buffer, 0, 40);
   uint8_t buflen = 40;
   MessageQueueItem incommingItem;
   

@@ -2,6 +2,7 @@
 
 MessageQueueItem::MessageQueueItem()
 {
+  m_messageLength = 0;
 }
 
 void MessageQueueItem::setMessageType(uint8_t messageType){
