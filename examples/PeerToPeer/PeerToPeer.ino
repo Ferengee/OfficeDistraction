@@ -100,7 +100,7 @@ void setup(){
   control.setChannelID(0);
   control.setMessageReceivedEventHandler(receiveMessageItem);
   control.notifyDiscartedItem = notifyDiscartedItem;
-  tr.init(11,10,2000);
+  tr.init(12,11,2000);
   in.setStream(&Serial);
   
   sendMethod.control = &control;
