@@ -86,9 +86,6 @@ void MessageQueueItem::destroy()
 void MessageQueueItem::acknowledge(uint8_t acknowledgementType)
 {
   if(getMessageType() == MESSAGE && acknowledgementType == ACKNOWLEDGE){
-    setMessageType(CONFIRM);
-    setRetriesLeft(MAXRETRIES);
-  } else if(getMessageType() == CONFIRM && acknowledgementType == ACKNOWLEDGE_CONFIRM) {
     destroy();
   }
 }

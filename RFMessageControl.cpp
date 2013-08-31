@@ -102,6 +102,9 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
  * send only one message per channel in each run
  */
 void RFMessageControl::sendRemainingMessages(){
+  unsigned long now = millis();
+  if(now - m_lastSendAt < MIN_SEND_TIMEOUT)
+    return;
   MessageQueueItem * item;
   MessageQueueItem ** sortedQueue = m_sendingSorter.reorder();
   bool channelSeen[MAXMESSAGECOUNT] = {false};
@@ -121,6 +124,8 @@ void RFMessageControl::sendRemainingMessages(){
       if (item->getRetriesLeft() > 0){
         item->decrementRetriesLeft();
         send(item);
+	m_lastSendAt = now;
+	break;
       }
     }
   }

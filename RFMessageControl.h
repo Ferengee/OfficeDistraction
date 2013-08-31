@@ -6,6 +6,7 @@
 #include "MessageQueueSorter.h"
 
 #include "BaseSenderReceiver.h"
+#define MIN_SEND_TIMEOUT 200
 
 typedef void (* MessageReceivedEventHandler) (MessageQueueItem item);
 
@@ -107,6 +108,7 @@ private:
   
   uint8_t m_ourChannelID;
   BaseSenderReceiver * m_transceiver;
+  long unsigned int m_lastSendAt;
 };
 
 #endif
