@@ -196,6 +196,9 @@ void RFMessageControl::handleIncommingMessages(){
           found = m_receivedSorter.getUnusedItem(&existing);
           if(found){
             existing->init(buffer, length);
+	   if(callback != NULL && !existing->isDestroyed()){
+	      callback(*existing);
+	    }
           }
         }
         if(found){
