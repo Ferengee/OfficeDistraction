@@ -83,16 +83,9 @@ void MessageQueueItem::destroy()
   setRetriesLeft(0);
 }
 
-void MessageQueueItem::acknowledge(uint8_t acknowledgementType)
-{
-  if(getMessageType() == MESSAGE && acknowledgementType == ACKNOWLEDGE){
-    destroy();
-  }
-}
 
 void MessageQueueItem::transition(uint8_t acknowledgementType){
   setMessageType(acknowledgementType);
-  setRetriesLeft(1);
 }
 
 bool MessageQueueItem::isDestroyed()

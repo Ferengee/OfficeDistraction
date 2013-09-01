@@ -32,9 +32,7 @@ bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSo
 void RFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
   MessageQueueItem * item = NULL;
   if(findMessage(acknowledgement->getChannel(), acknowledgement->getMessageId(), -1, &item, m_sending)){
-    // only acknowledge if type == MESSAGE and other.type == ACKNOWLEDGE
-    //                  or type == CONFIRM and other.type == ACKNOWLEDGE_CONFIRM
-    item->acknowledge(acknowledgement->getMessageType());
+    item->destroy();
   }
 }
 
@@ -102,8 +100,9 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
  * send only one message per channel in each run
  */
 void RFMessageControl::sendRemainingMessages(){
-  unsigned long now = millis();
-  if(now - m_lastSendAt < MIN_SEND_TIMEOUT)
+  unsigned long int now = millis();
+  unsigned long int delta = now - m_lastSendAt;
+  if(delta < MIN_SEND_TIMEOUT)
     return;
   MessageQueueItem * item;
   MessageQueueItem ** sortedQueue = m_sendingSorter.reorder();
@@ -183,7 +182,7 @@ void RFMessageControl::handleIncommingMessages(){
     uint8_t messageId = received.getMessageId();
     uint8_t channel = received.getChannel();
     
-    if(fromUs(channel) && (messageType == ACKNOWLEDGE || messageType == ACKNOWLEDGE_CONFIRM)){
+    if(fromUs(channel) && (messageType == ACKNOWLEDGE )){
       acknowledge(&received);
     } else if(toUs(channel)){
       
@@ -196,6 +195,7 @@ void RFMessageControl::handleIncommingMessages(){
           found = m_receivedSorter.getUnusedItem(&existing);
           if(found){
             existing->init(buffer, length);
+            existing->setRetriesLeft(MAXRETRIES + 1);
 	   if(callback != NULL && !existing->isDestroyed()){
 	      callback(*existing);
 	    }
@@ -203,14 +203,6 @@ void RFMessageControl::handleIncommingMessages(){
         }
         if(found){
           sendAcknowledge(existing, ACKNOWLEDGE);
-        }
-      } else if (messageType == CONFIRM){
-        if(found){
-          if(callback != NULL && !existing->isDestroyed()){
-            callback(*existing);
-          }
-          sendAcknowledge(existing, ACKNOWLEDGE_CONFIRM);
-          existing->destroy();
         }
       }
     }
@@ -238,8 +230,7 @@ void RFMessageControl::decrementReceivedMessagesRetriesLeft()
 
 void RFMessageControl::update(){
   unsigned long now = millis();
-  int deltaT = now - m_lastDecrementRun;
-  if (deltaT > 1000){
+  if (now - m_lastDecrementRun > MIN_SEND_TIMEOUT){
     decrementReceivedMessagesRetriesLeft();
     m_lastDecrementRun = now;
   }

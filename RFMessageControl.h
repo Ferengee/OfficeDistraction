@@ -6,7 +6,7 @@
 #include "MessageQueueSorter.h"
 
 #include "BaseSenderReceiver.h"
-#define MIN_SEND_TIMEOUT 200
+#define MIN_SEND_TIMEOUT 250
 
 typedef void (* MessageReceivedEventHandler) (MessageQueueItem item);
 
