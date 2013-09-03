@@ -44,7 +44,7 @@ void PWMControl::writeSine()
 }
 
 double PWMControl::renderSine(){
-  unsigned long x = millis() * (10 * PI / _period);
+  unsigned long x = (millis() - _start) * (10 * PI / _period);
    return sin(x);
 }
 
