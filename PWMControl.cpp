@@ -4,6 +4,9 @@ PWMControl::PWMControl(int pwmPin)
 {
   _pin = pwmPin;
 }
+PWMControl::PWMControl()
+{
+}
 
 void PWMControl::update()
 {

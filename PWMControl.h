@@ -8,6 +8,8 @@ class PWMControl
 {
 public:
   PWMControl(int pwmPin);
+  PWMControl();
+  void init(int pwmPin){_pin = pwmPin;}
   void sine(uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){
     set(SINE, offset, duration, amplitude, period);
   }
