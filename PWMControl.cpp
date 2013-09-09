@@ -47,14 +47,14 @@ void PWMControl::writeSine()
 }
 
 double PWMControl::renderSine(){
-  unsigned long x = (millis() - _start) * (10 * PI / _period);
-   return sin(x);
+  double x = (millis() - _start) * (10 * PI / _period);
+  return sin(x);
 }
 
 void PWMControl::writeSquare()
 {
   int amplitude = _amplitude;
-  if ((renderSine() + 1) * 128 < _shift)
+  if (((renderSine() + 1) * 128) < _shift)
     amplitude = 0;
   analogWrite(_pin, amplitude);
 }
