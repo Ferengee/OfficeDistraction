@@ -17,6 +17,14 @@ void PWMControl::update()
     case SQUARE:
       writeSquare();
       break;
+  }
+  if((millis() - _start) > (_duration * 100))  
+    set(OFF, 0,0,0,0);
+}
+
+void PWMControl::set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
+{
+  switch(_shape){
     case OFF:
       analogWrite(_pin, 0);
       break;
@@ -24,10 +32,6 @@ void PWMControl::update()
       analogWrite(_pin, _amplitude);
       break;  
   }
-}
-
-void PWMControl::set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
-{
   _shape = shape;
   _offset = offset;
   _duration = duration;
@@ -40,14 +44,14 @@ void PWMControl::writeSine()
 {
   
   /*
-   * 2pi = 5.12 seconds if _period = 256
+   * 2pi = 5.12 seconds if _period = 255
    * 10 * pi / _period  * millis
    */
   analogWrite(_pin, 0.5 * (renderSine() + 1) * _amplitude );
 }
 
 double PWMControl::renderSine(){
-  double x = (millis() - _start) * (10 * PI / _period);
+  double x = (millis() - _start) * ( PI /( ((int)_period + 1) * 10));
   return sin(x);
 }
 
