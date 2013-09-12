@@ -135,7 +135,7 @@ void RFMessageControl::sendRemainingMessages(){
  * optimize to send only relevant data later
  */
 void RFMessageControl::send(MessageQueueItem * item){
-  uint8_t length = item->getLength() + MESSAGE_HEADER_LENGTH;
+  uint8_t length = sizeof(message_data_t);
   m_transceiver->send(item->getBuffer(),length);
 }
 
@@ -172,10 +172,11 @@ void RFMessageControl::handleIncommingMessages(){
    *  if type == MESSAGE => remember message, send ACKNOWLEDGE
    *  if type == CONFIRM => forget message, send ACKNOWLEDGE_CONFIRM, call callback function            
    */
-  uint8_t buffer[MESSAGE_BUFFER_SIZE];
-  MessageQueueItem received;
-  MessageQueueItem * existing;
-  uint8_t length = MESSAGE_BUFFER_SIZE;
+  uint8_t buffer[sizeof(message_data_t)] = {0};
+
+  MessageQueueItem received = MessageQueueItem();
+  MessageQueueItem * existing = NULL;
+  uint8_t length = sizeof(message_data_t);
   while (m_transceiver->get_message(buffer, &length)){
     received.init(buffer, length);
     uint8_t messageType = received.getMessageType(); 

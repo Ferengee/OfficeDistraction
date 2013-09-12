@@ -3,6 +3,21 @@
 #include "Arduino.h"
 #include "OfficeDistractionConfig.h"
 
+
+typedef struct message_header_s {
+  message_header_s() : type(0),id(0), channel(0), retries(0), length(0){}
+  uint8_t type;
+  uint8_t id;
+  uint8_t channel;
+  uint8_t retries;
+  uint8_t length;
+} message_header_t;
+  
+typedef struct {
+  message_header_t head;
+  uint8_t data[MESSAGE_SIZE];
+} message_data_t;
+
 class MessageQueueItem
 {
 public:
@@ -27,7 +42,7 @@ public:
   void decrementRetriesLeft();
   void transition(uint8_t acknowledgementType);
   uint8_t getLength();
-
+  message_data_t m_messageData;
 private:  
   void setMessageType(uint8_t messageType);
   
@@ -35,9 +50,7 @@ private:
   void setChannel(uint8_t channel);
   void setMessageId(uint8_t messageId);
   
-  uint8_t m_messageLength;
-
-  uint8_t m_messageBuffer[MESSAGE_BUFFER_SIZE]; // about 30 - (3 ) = 27 bytes
+  
 };
 
 

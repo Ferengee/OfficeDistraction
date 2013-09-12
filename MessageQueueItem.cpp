@@ -2,45 +2,49 @@
 
 MessageQueueItem::MessageQueueItem()
 {
-  m_messageLength = 0;
+  m_messageData.head.type = 0;
+  m_messageData.head.id = 0;
+  m_messageData.head.channel = 0;
+  m_messageData.head.retries = 0;
+  m_messageData.head.length = 0;
 }
 
 void MessageQueueItem::setMessageType(uint8_t messageType){
-  m_messageBuffer[0] = messageType;
+  m_messageData.head.type = messageType;
 }
 
 uint8_t MessageQueueItem::getMessageType(){
-  return m_messageBuffer[0];
+  return  m_messageData.head.type;
 }
 
 void MessageQueueItem::setChannel(uint8_t channel){
-  m_messageBuffer[1] = channel;
+   m_messageData.head.channel = channel;
 }
 uint8_t MessageQueueItem::getChannel(){
-  return m_messageBuffer[1];
+  return m_messageData.head.channel;
 }
 void MessageQueueItem::setMessageId(uint8_t messageId){
-  m_messageBuffer[2] = messageId;
+  m_messageData.head.id = messageId;
 }
 uint8_t MessageQueueItem::getMessageId(){
-  return m_messageBuffer[2];
+  return  m_messageData.head.id;
 }
 
 void MessageQueueItem::setRetriesLeft(uint8_t retries){
-  m_messageBuffer[3] = retries;
+   m_messageData.head.retries = retries;
 }
 uint8_t MessageQueueItem::getRetriesLeft(){
-  return m_messageBuffer[3];
+  return m_messageData.head.retries;
 }
 
 uint8_t * MessageQueueItem::getBuffer(){
-  return m_messageBuffer;
+  return (uint8_t *)&m_messageData;
 }
 
 void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
-  uint8_t toCopy = min(m_messageLength, *length);
+  uint8_t toCopy = min(m_messageData.head.length, *length);
 
-  memcpy(message, m_messageBuffer + MESSAGE_HEADER_LENGTH, toCopy);
+  memcpy(message, m_messageData.data, toCopy);
   *length = toCopy;
   
 }
@@ -48,33 +52,34 @@ void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
 
 void MessageQueueItem::decrementRetriesLeft()
 {
-   uint8_t retriesLeft = m_messageBuffer[3];
+   uint8_t retriesLeft = m_messageData.head.retries;
    retriesLeft--;
    /* don't overflow */
-   if (m_messageBuffer[3] > retriesLeft){
-     m_messageBuffer[3] = retriesLeft; 
+   if (m_messageData.head.retries > retriesLeft){
+     m_messageData.head.retries = retriesLeft; 
    }
 }
 void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength)
 {
-  memset(m_messageBuffer,0,sizeof(m_messageBuffer));
+  memset(&m_messageData,0,sizeof(m_messageData));
   setMessageType(MESSAGE);
   setChannel(channel);
   setMessageId(messageId);
   setRetriesLeft(MAXRETRIES);
-  m_messageLength =  min(MESSAGE_SIZE, messageLength);
-  memcpy(m_messageBuffer + MESSAGE_HEADER_LENGTH, message, m_messageLength); 
+  m_messageData.head.length =  min(sizeof(m_messageData.data), messageLength);
+  memcpy(m_messageData.data, message, m_messageData.head.length); 
 }
 
-void MessageQueueItem::init(uint8_t * messageBuffer, uint8_t length)
+void MessageQueueItem::init(uint8_t * messageData, uint8_t length)
 {
-  m_messageLength = length;
-  memcpy(m_messageBuffer , messageBuffer, MESSAGE_BUFFER_SIZE); 
+  memset(&m_messageData,0,sizeof(m_messageData));
+  m_messageData.head.length = length;
+  memcpy(&m_messageData , messageData, sizeof(message_data_t)); 
 }
 
 uint8_t MessageQueueItem::getLength()
 {
-  return m_messageLength;
+  return m_messageData.head.length;
 }
 
 

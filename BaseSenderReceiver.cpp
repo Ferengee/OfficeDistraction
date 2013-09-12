@@ -37,7 +37,7 @@ bool TestSenderReceiver::receive(uint8_t * buf, uint8_t len)
     memcpy(incommingItem.getBuffer(), buf, min(MESSAGE_BUFFER_SIZE, len)); 
     
     incommingItem.getMessage(buffer, &buflen);
-    
+    buffer[buflen -1 ] = 0;
     Serial.print("  send message: ");
     if(incommingItem.getMessageType() % 2 == 0)
       Serial.print("-> ");
