@@ -2,11 +2,7 @@
 
 MessageQueueItem::MessageQueueItem()
 {
-  m_messageData.head.type = 0;
-  m_messageData.head.id = 0;
-  m_messageData.head.channel = 0;
-  m_messageData.head.retries = 0;
-  m_messageData.head.length = 0;
+ 
 }
 
 void MessageQueueItem::setMessageType(uint8_t messageType){
@@ -72,7 +68,7 @@ void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * messag
 
 void MessageQueueItem::init(uint8_t * messageData, uint8_t length)
 {
-  memset(&m_messageData,0,sizeof(m_messageData));
+  memset(&m_messageData,0,sizeof(message_data_t));
   m_messageData.head.length = length;
   memcpy(&m_messageData , messageData, sizeof(message_data_t)); 
 }
