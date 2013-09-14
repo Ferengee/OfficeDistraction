@@ -37,6 +37,10 @@ uint8_t * MessageQueueItem::getBuffer(){
   return (uint8_t *)&m_messageData;
 }
 
+uint8_t * MessageQueueItem::getData(){
+  return (uint8_t *)&(m_messageData.data);
+}
+
 void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
   uint8_t toCopy = min(m_messageData.head.length, *length);
 
