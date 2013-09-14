@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 
-RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
+AbstractRFMessageControl::AbstractRFMessageControl(BaseSenderReceiver * transceiver)
 {
   m_transceiver = transceiver;
   m_lastDecrementRun = 0;
@@ -12,7 +12,7 @@ RFMessageControl::RFMessageControl(BaseSenderReceiver * transceiver)
   notifyDiscartedItem = NULL;
 }
 
-bool RFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
+bool AbstractRFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
   MessageQueueItem * item = NULL;
   uint8_t channel = getChannel(toChannelID);
   bool succes = m_sendingSorter.getUnusedItem(&item);
@@ -23,13 +23,13 @@ bool RFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8
   return succes;
 }
 
-bool RFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter){
+bool AbstractRFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter){
   // should be sorter->getUnusedMessage()
   return sorter->getUnusedItem(item);
   //return findMessage(-1, -1, 0, item, queue);
 }
 
-void RFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
+void AbstractRFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
   MessageQueueItem * item = NULL;
   if(findMessage(acknowledgement->getChannel(), acknowledgement->getMessageId(), -1, &item, m_sending)){
     item->destroy();
@@ -51,7 +51,7 @@ bool MessageRetriesLeftEquals(MessageQueueItem * item, uint8_t retriesLeft)
   return item->getRetriesLeft() == retriesLeft;
 }
 
-bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, MessageQueueItem ** item, MessageQueueItem * queue)
+bool AbstractRFMessageControl::findMessage(int channel, int messageId, int retriesLeft, MessageQueueItem ** item, MessageQueueItem * queue)
 {
   MessageParameterEquals testFunctions[3];
   uint8_t values[3];
@@ -99,7 +99,7 @@ bool RFMessageControl::findMessage(int channel, int messageId, int retriesLeft, 
  * create a map of booleans and flag if a channel has been seen
  * send only one message per channel in each run
  */
-void RFMessageControl::sendRemainingMessages(){
+void AbstractRFMessageControl::sendRemainingMessages(){
   unsigned long int now = millis();
   unsigned long int delta = now - m_lastSendAt;
   if(delta < MIN_SEND_TIMEOUT)
@@ -134,12 +134,12 @@ void RFMessageControl::sendRemainingMessages(){
 /* sent full buffer for now
  * optimize to send only relevant data later
  */
-void RFMessageControl::send(MessageQueueItem * item){
+void AbstractRFMessageControl::send(MessageQueueItem * item){
   uint8_t length = sizeof(message_data_t);
   m_transceiver->send(item->getBuffer(),length);
 }
 
-void RFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t messageType){
+void AbstractRFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t messageType){
   existing->transition(messageType);
   send(existing);
 }
@@ -148,30 +148,21 @@ void RFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t mess
  *  channel = sender|receiver
  *     8Bit =   4Bit|4Bit
  */
-bool RFMessageControl::toUs(uint8_t channel)
+bool AbstractRFMessageControl::toUs(uint8_t channel)
 {
   uint8_t receiver =  channel & 0xF;
   return receiver == m_ourChannelID;
 }
 
-bool RFMessageControl::fromUs(uint8_t channel)
+bool AbstractRFMessageControl::fromUs(uint8_t channel)
 {
   uint8_t sender = (channel >> 4) & 0xF;
   return sender == m_ourChannelID;
 
 }
 
-void RFMessageControl::handleIncommingMessages(){
-  /*
-   * has_new_message = vw_get_message (buf, len)
-   * convert buffer to MessageQueueItem
-   * check message type
-   * if type == ACKNOWLEDGE || type == ACKNOWLEDGE_CONFIRM => acknowledge(item)
-   * if type == MESSAGE || type == CONFIRM =>
-   *  check message channel == ours // still have to implement setting our channel
-   *  if type == MESSAGE => remember message, send ACKNOWLEDGE
-   *  if type == CONFIRM => forget message, send ACKNOWLEDGE_CONFIRM, call callback function            
-   */
+void AbstractRFMessageControl::handleIncommingMessages(){
+
   uint8_t buffer[sizeof(message_data_t)] = {0};
 
   MessageQueueItem received = MessageQueueItem();
@@ -197,9 +188,7 @@ void RFMessageControl::handleIncommingMessages(){
           if(found){
             existing->init(buffer, length);
             existing->setRetriesLeft(MAXRETRIES + 1);
-	   if(callback != NULL && !existing->isDestroyed()){
-	      callback(*existing);
-	    }
+	   handleIncommingMessage(existing);
           }
         }
         if(found){
@@ -211,8 +200,11 @@ void RFMessageControl::handleIncommingMessages(){
   m_receivedSorter.reorder();
 }
 
+void AbstractRFMessageControl::handleIncommingMessage(MessageQueueItem * item){
+ 
+}
 
-void RFMessageControl::decrementReceivedMessagesRetriesLeft()
+void AbstractRFMessageControl::decrementReceivedMessagesRetriesLeft()
 {
   MessageQueueItem * item;
   int i;
@@ -229,7 +221,7 @@ void RFMessageControl::decrementReceivedMessagesRetriesLeft()
   }
 }
 
-void RFMessageControl::update(){
+void AbstractRFMessageControl::update(){
   unsigned long now = millis();
   if (now - m_lastDecrementRun > MIN_SEND_TIMEOUT){
     decrementReceivedMessagesRetriesLeft();
@@ -239,7 +231,7 @@ void RFMessageControl::update(){
   handleIncommingMessages();
 }
 
-uint8_t RFMessageControl::getChannelID(){
+uint8_t AbstractRFMessageControl::getChannelID(){
   return m_ourChannelID;
 }
 
@@ -247,15 +239,22 @@ uint8_t RFMessageControl::getChannelID(){
  *  channel = sender|receiver
  *     8Bit =   4Bit|4Bit
  */
-uint8_t RFMessageControl::getChannel(uint8_t toChannelID){
+uint8_t AbstractRFMessageControl::getChannel(uint8_t toChannelID){
   return ((m_ourChannelID & 0xF) << 4) | (toChannelID & 0xF);
   
 }
 
-void RFMessageControl::setChannelID(uint8_t channelId){
+void AbstractRFMessageControl::setChannelID(uint8_t channelId){
   m_ourChannelID = channelId;
 }
 
 void RFMessageControl::setMessageReceivedEventHandler(MessageReceivedEventHandler eh){
   callback = eh; 
 }
+
+void RFMessageControl::handleIncommingMessage(MessageQueueItem * item){
+  if(callback != NULL && !item->isDestroyed()){
+    callback(*item);
+  }
+}
+

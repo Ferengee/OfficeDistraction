@@ -29,7 +29,8 @@ public:
   bool isDestroyed();
   
   void getMessage(uint8_t * message, uint8_t * length);
-  
+  uint8_t * getData();
+
   uint8_t * getBuffer();
   uint8_t getMessageId();
 
@@ -42,15 +43,13 @@ public:
   void decrementRetriesLeft();
   void transition(uint8_t acknowledgementType);
   uint8_t getLength();
-  message_data_t m_messageData;
 private:  
   void setMessageType(uint8_t messageType);
   
-
   void setChannel(uint8_t channel);
   void setMessageId(uint8_t messageId);
-  
-  
+ 
+  message_data_t m_messageData;
 };
 
 

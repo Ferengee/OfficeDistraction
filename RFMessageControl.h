@@ -25,10 +25,10 @@ typedef void (* NotifyDiscartedItem)(MessageQueueItem* item);
  */
 
 
-class RFMessageControl
+class AbstractRFMessageControl
 {
 public:
-  RFMessageControl(BaseSenderReceiver * transceiver);
+  AbstractRFMessageControl(BaseSenderReceiver * transceiver);
 
   /* 
    * Copies the contents of the message
@@ -54,7 +54,6 @@ public:
   void update();
   void decrementReceivedMessagesRetriesLeft();
   
-  void setMessageReceivedEventHandler(MessageReceivedEventHandler eh);
   uint8_t getChannelID();
   /*
    * channel = (sender|receiver) for MESSAGE and CONFIRM types of messages
@@ -64,6 +63,8 @@ public:
   void setChannelID(uint8_t channelID);
 
   NotifyDiscartedItem notifyDiscartedItem;
+protected:
+  virtual void handleIncommingMessage(MessageQueueItem* existing);
 
 private:
   MessageQueueItem m_sending[MAXMESSAGECOUNT];
@@ -104,11 +105,22 @@ private:
 
   uint8_t m_lastMessageId;
   unsigned long m_lastDecrementRun;
-  MessageReceivedEventHandler callback;
   
   uint8_t m_ourChannelID;
   BaseSenderReceiver * m_transceiver;
   long unsigned int m_lastSendAt;
+};
+
+class RFMessageControl: public AbstractRFMessageControl
+{
+public:
+  RFMessageControl(BaseSenderReceiver * transceiver) : AbstractRFMessageControl(transceiver){}
+  virtual void handleIncommingMessage(MessageQueueItem * item);
+  void setMessageReceivedEventHandler(MessageReceivedEventHandler eh);
+
+private:
+    MessageReceivedEventHandler callback;
+
 };
 
 #endif
