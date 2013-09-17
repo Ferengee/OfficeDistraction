@@ -20,19 +20,19 @@ void PWMControl::update()
       writeSquare();
       break;
   }
-  if(_shape > OFF && (millis() - _start) > (_duration * 100))  
+  if(_shape > OFF && (millis() - _start) > (_duration * 100)) 
     set(OFF, 0,0,0,0);
 }
 
 void PWMControl::set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
 {
-  switch(_shape){
+  switch(shape){
     case OFF:
       analogWrite(_pin, 0);
       break;
     case ON:
       analogWrite(_pin, _amplitude);
-      break;  
+      break;    
   }
   _shape = shape;
   _offset = offset;
