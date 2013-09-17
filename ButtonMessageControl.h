@@ -29,21 +29,21 @@ class ButtonMessageControl: public AbstractRFMessageControl
 {
 public:
   ButtonMessageControl(BaseSenderReceiver * transceiver) : AbstractRFMessageControl(transceiver){
-    _handleButtonCommand = NULL;
-    _handleVibrateCommmand = NULL;
-    _handleLedCommmand = NULL;
+    handleButtonCommand = NULL;
+    handleVibrateCommand = NULL;
+    handleLedCommand = NULL;
   }
   virtual void handleIncommingMessage(MessageQueueItem * item);
-  void sendButtonEvent(bool pressed);
-  void sendLedCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
-  void sendVibrateCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
+  bool sendButtonEvent(bool pressed);
+  bool sendLedCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
+  bool sendVibrateCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
   
-
+  PWMCommand handleLedCommand;
+  PWMCommand handleVibrateCommand;
+  DigitalCommand handleButtonCommand;
 private:
-  void sendCommand(uint8_t target, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
-  PWMCommand _handleLedCommmand;
-  PWMCommand _handleVibrateCommmand;
-  DigitalCommand _handleButtonCommand;
+  bool sendCommand(uint8_t toChannelID, uint8_t target, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
+
 };
 
 #endif

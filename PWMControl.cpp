@@ -3,6 +3,7 @@
 PWMControl::PWMControl(int pwmPin)
 {
   _pin = pwmPin;
+  _shape = OFF;
 }
 PWMControl::PWMControl()
 {
@@ -11,6 +12,7 @@ PWMControl::PWMControl()
 void PWMControl::update()
 {
   switch(_shape){
+    
     case SINE:
       writeSine();
       break;
@@ -18,7 +20,7 @@ void PWMControl::update()
       writeSquare();
       break;
   }
-  if((millis() - _start) > (_duration * 100))  
+  if(_shape > OFF && (millis() - _start) > (_duration * 100))  
     set(OFF, 0,0,0,0);
 }
 
