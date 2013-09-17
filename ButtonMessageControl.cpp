@@ -54,7 +54,7 @@ bool ButtonMessageControl::sendVibrateCommand(uint8_t toChannelID, uint8_t shape
 
 bool ButtonMessageControl::sendCommand(uint8_t toChannelID, uint8_t target, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
 {
-  uint8_t event[sizeof(digital_command_t) + 1];
+  uint8_t event[sizeof(pwm_command_t) + 1];
   event[0] = target;
   pwm_command_t * pwm_cmd = (pwm_command_t *)(event + 1);
   pwm_cmd->shape = shape;
@@ -63,6 +63,6 @@ bool ButtonMessageControl::sendCommand(uint8_t toChannelID, uint8_t target, uint
   pwm_cmd->amplitude = amplitude;
   pwm_cmd->period = period;
   
-  return sendMessage(toChannelID, event, (uint8_t)(sizeof(digital_command_t) + 1));
+  return sendMessage(toChannelID, event, (uint8_t)(sizeof(pwm_command_t) + 1));
 
 }
