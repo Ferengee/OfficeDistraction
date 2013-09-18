@@ -45,11 +45,11 @@ bool ButtonMessageControl::sendButtonEvent(bool pressed){
 }
 
 bool ButtonMessageControl::sendLedCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){
-  sendCommand(toChannelID, LED, shape, offset, duration, amplitude, period);
+  return sendCommand(toChannelID, LED, shape, offset, duration, amplitude, period);
 }
 
 bool ButtonMessageControl::sendVibrateCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){
-  sendCommand(toChannelID, VIBRATE, shape, offset, duration, amplitude, period);
+  return sendCommand(toChannelID, VIBRATE, shape, offset, duration, amplitude, period);
 }
 
 bool ButtonMessageControl::sendCommand(uint8_t toChannelID, uint8_t target, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
