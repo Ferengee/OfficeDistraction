@@ -134,9 +134,9 @@ void AbstractRFMessageControl::sendRemainingMessages(){
 /* sent full buffer for now
  * optimize to send only relevant data later
  */
-void AbstractRFMessageControl::send(MessageQueueItem * item){
+bool AbstractRFMessageControl::send(MessageQueueItem * item){
   uint8_t length = sizeof(message_data_t);
-  m_transceiver->send(item->getBuffer(),length);
+  return m_transceiver->send(item->getBuffer(),length);
 }
 
 void AbstractRFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t messageType){

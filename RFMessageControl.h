@@ -76,8 +76,9 @@ private:
 
   /*
    * Encode the MessageQueueItem over the wire
+   * return succes
    */
-  void send(MessageQueueItem * item);
+  bool send(MessageQueueItem * item);
   /*
    * find the next item with m_retriesLeft == 0
    * init to MAXRETRIES
