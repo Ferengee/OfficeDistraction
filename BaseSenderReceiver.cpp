@@ -39,13 +39,7 @@ bool TestSenderReceiver::receive(uint8_t * buf, uint8_t len)
     incommingItem.getMessage(buffer, &buflen);
     buffer[buflen -1 ] = 0;
     Serial.print("  send message: ");
-    if(incommingItem.getMessageType() % 2 == 0)
-      Serial.print("-> ");
-    else
-      Serial.print("<- ");
     Serial.print(incommingItem.getMessageId());
-    Serial.print(":");
-    Serial.print(incommingItem.getMessageType());
     Serial.print(":");
     Serial.print(m_sendcount);
     Serial.print(":");
@@ -55,8 +49,6 @@ bool TestSenderReceiver::receive(uint8_t * buf, uint8_t len)
     if (m_sendcount > 10 && ((m_sendcount % 5) == 0 ||(m_sendcount % 6) == 2)){
       Serial.print("  - dropped message message: ");
       Serial.print(incommingItem.getMessageId());
-      Serial.print(":");
-      Serial.print(incommingItem.getMessageType());
       Serial.print(":");
       Serial.println(m_sendcount);
     } else {

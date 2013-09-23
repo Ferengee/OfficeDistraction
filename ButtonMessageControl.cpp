@@ -1,7 +1,9 @@
 #include "ButtonMessageControl.h"
 #include "Arduino.h"
 
-
+void ButtonMessageControl::handleIncommingReply(MessageQueueItem * item){
+  handleIncommingMessage(item);
+}
 void ButtonMessageControl::handleIncommingMessage(MessageQueueItem * item){
   /*
    * get data from message
@@ -9,60 +11,84 @@ void ButtonMessageControl::handleIncommingMessage(MessageQueueItem * item){
    * execute commands
    * 
    */
-  
-  uint8_t * data = item->getData();
-  uint8_t target = data[0];
-  digital_command_t * digital_cmd = NULL;
-  pwm_command_t * pwm_cmd = NULL;
-  switch (target){
+  CommandContext context(this);
+  context.setMessageQueueItem(item);
+  od_command_header_t * cmd = (od_command_header_t *)item->getData();
+  switch (cmd->label){
     case BUTTON:
       if(handleButtonCommand != NULL){
-        digital_cmd = (digital_command_t *)(data +1);
-        handleButtonCommand(digital_cmd->value);
+        handleButtonCommand(&context, cmd->digital);
       }
       break;
     case LED:
       if(handleLedCommand != NULL){
-        pwm_cmd = (pwm_command_t * )(data + 1);
-        handleLedCommand(pwm_cmd->shape, pwm_cmd->offset, pwm_cmd->duration, pwm_cmd->amplitude, pwm_cmd->period);
+        handleLedCommand(&context, cmd->pwm);
       }
       break;
     case VIBRATE:
       if(handleVibrateCommand != NULL){
-        pwm_cmd = (pwm_command_t * )(data + 1);
-        handleVibrateCommand(pwm_cmd->shape, pwm_cmd->offset, pwm_cmd->duration, pwm_cmd->amplitude, pwm_cmd->period);
+        handleVibrateCommand(&context, cmd->pwm);
       }
       break;
   }
+  context.finalizeMessage();
 }
 
 bool ButtonMessageControl::sendButtonEvent(bool pressed){
-  uint8_t event[sizeof(digital_command_t) + 1];
-  event[0] = BUTTON;
-  digital_command_t * cmd = (digital_command_t *)(event + 1);
-  cmd->value = (uint8_t)pressed;
-  return sendMessage((uint8_t)MASTER, event, (uint8_t)(sizeof(digital_command_t) + 1));
+  od_command_header_t cmd;
+  cmd.label = BUTTON;
+  cmd.digital.value = (uint8_t)pressed;
+  return sendMessage((uint8_t)MASTER, (uint8_t *)&cmd, (uint8_t)(sizeof(od_command_header_t)));
 }
 
-bool ButtonMessageControl::sendLedCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){
-  return sendCommand(toChannelID, LED, shape, offset, duration, amplitude, period);
+bool ButtonMessageControl::sendLedCommand(uint8_t toChannelID, pwm_command_t pwm){
+ od_command_header_t cmd;
+  cmd.label = LED;
+  cmd.pwm = pwm;
+ 
+  return sendMessage(toChannelID, (uint8_t *)&cmd, (uint8_t)(sizeof(od_command_header_t)));
+}
+bool ButtonMessageControl::sendLedCommand(uint8_t toChannelID, uint8_t shape,uint8_t offset,uint8_t duration,uint8_t amplitude,uint8_t period){
+  pwm_command_t cmd;
+  cmd.shape = shape;
+  cmd.offset = offset; 
+  cmd.duration = duration;
+  cmd.amplitude = amplitude, 
+  cmd.period = period;
+  return sendLedCommand(toChannelID, cmd);
 }
 
-bool ButtonMessageControl::sendVibrateCommand(uint8_t toChannelID, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){
-  return sendCommand(toChannelID, VIBRATE, shape, offset, duration, amplitude, period);
+bool ButtonMessageControl::sendVibrateCommand(uint8_t toChannelID, pwm_command_t pwm){
+  od_command_header_t cmd;
+  cmd.label = VIBRATE;
+  cmd.pwm = pwm;
+ 
+  return sendMessage(toChannelID, (uint8_t *)&cmd, (uint8_t)(sizeof(od_command_header_t)));
+}
+bool ButtonMessageControl::sendVibrateCommand(uint8_t toChannelID, uint8_t shape,uint8_t offset,uint8_t duration,uint8_t amplitude,uint8_t period){
+  pwm_command_t cmd;
+  cmd.shape = shape;
+  cmd.offset = offset; 
+  cmd.duration = duration;
+  cmd.amplitude = amplitude, 
+  cmd.period = period;
+  return sendVibrateCommand(toChannelID, cmd);
 }
 
-bool ButtonMessageControl::sendCommand(uint8_t toChannelID, uint8_t target, uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
+void CommandContext::finalizeMessage()
 {
-  uint8_t event[sizeof(pwm_command_t) + 1];
-  event[0] = target;
-  pwm_command_t * pwm_cmd = (pwm_command_t *)(event + 1);
-  pwm_cmd->shape = shape;
-  pwm_cmd->offset = offset;
-  pwm_cmd->duration = duration;
-  pwm_cmd->amplitude = amplitude;
-  pwm_cmd->period = period;
-  
-  return sendMessage(toChannelID, event, (uint8_t)(sizeof(pwm_command_t) + 1));
-
+  if(!_replied){
+    od_command_header_t cmd;
+    cmd.label = ACKNOWLEDGE;
+    reply(&cmd);
+  }
+}
+void CommandContext::reply(od_command_header_t* command)
+{
+  _replied = true;
+  _item->setData((uint8_t *)command, sizeof(od_command_header_t));
+}
+AbstractRFMessageControl* CommandContext::control()
+{
+  return _control;
 }

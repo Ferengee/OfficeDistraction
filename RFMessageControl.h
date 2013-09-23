@@ -38,7 +38,7 @@ public:
    */
   bool sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength);
   void acknowledge(MessageQueueItem * acknowledgement);
-  void sendAcknowledge(MessageQueueItem * existing, uint8_t messageType);
+  void sendAcknowledge(MessageQueueItem * existing);
 
   /* 
    * iterate queue, 
@@ -64,7 +64,8 @@ public:
 
   NotifyDiscartedItem notifyDiscartedItem;
 protected:
-  virtual void handleIncommingMessage(MessageQueueItem* existing);
+  virtual void handleIncommingMessage(MessageQueueItem* received);
+  virtual void handleIncommingReply(MessageQueueItem* received);
 
 private:
   MessageQueueItem m_sending[MAXMESSAGECOUNT];
@@ -79,12 +80,7 @@ private:
    * return succes
    */
   bool send(MessageQueueItem * item);
-  /*
-   * find the next item with m_retriesLeft == 0
-   * init to MAXRETRIES
-   * to be used in sendMessage
-   */
-  bool getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter);
+
   /* 
    * find the message which corresponds with the given parameters
    * If more than one message matches the parameters, the first one is returned
@@ -97,12 +93,12 @@ private:
    * for the acknowledge type of MessageQueueItems the channel is the same from the message they acknowledge
    * so from their perspective sender and receiver are in reverse order. 
    */
-  bool toUs(uint8_t channel);
+  bool isRequest(uint8_t channel);
   /*
    * returns true if we send the original message
    * so it also returns true on a received acknowledgement which was send in reply to one of our messages.
    */
-  bool fromUs(uint8_t channel);
+  bool isReply(uint8_t channel);
 
   uint8_t m_lastMessageId;
   unsigned long m_lastDecrementRun;

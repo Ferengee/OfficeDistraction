@@ -5,13 +5,6 @@ MessageQueueItem::MessageQueueItem()
  
 }
 
-void MessageQueueItem::setMessageType(uint8_t messageType){
-  m_messageData.head.type = messageType;
-}
-
-uint8_t MessageQueueItem::getMessageType(){
-  return  m_messageData.head.type;
-}
 
 void MessageQueueItem::setChannel(uint8_t channel){
    m_messageData.head.channel = channel;
@@ -62,12 +55,16 @@ void MessageQueueItem::decrementRetriesLeft()
 void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength)
 {
   memset(&m_messageData,0,sizeof(m_messageData));
-  setMessageType(MESSAGE);
   setChannel(channel);
   setMessageId(messageId);
   setRetriesLeft(MAXRETRIES);
+  setData(message,  messageLength);
+}
+
+void MessageQueueItem::setData( uint8_t * message, uint8_t messageLength)
+{
   m_messageData.head.length =  min(sizeof(m_messageData.data), messageLength);
-  memcpy(m_messageData.data, message, m_messageData.head.length); 
+  memcpy(m_messageData.data, message, m_messageData.head.length);  
 }
 
 void MessageQueueItem::init(uint8_t * messageData, uint8_t length)
@@ -86,11 +83,6 @@ uint8_t MessageQueueItem::getLength()
 void MessageQueueItem::destroy()
 {
   setRetriesLeft(0);
-}
-
-
-void MessageQueueItem::transition(uint8_t acknowledgementType){
-  setMessageType(acknowledgementType);
 }
 
 bool MessageQueueItem::isDestroyed()

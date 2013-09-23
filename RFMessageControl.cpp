@@ -1,6 +1,14 @@
 #include "RFMessageControl.h"
 #include "Arduino.h"
 
+/*
+ * TODO: 
+ * - remove message type
+ * - rewrite message/acknowledge to request/reply
+ * - delegate responsibility of reply to handleIncommingMessage
+ * - make it obvious that requests should be replied
+ * 
+ */
 
 AbstractRFMessageControl::AbstractRFMessageControl(BaseSenderReceiver * transceiver)
 {
@@ -21,12 +29,6 @@ bool AbstractRFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * messag
     item->init(channel, m_lastMessageId++, message, messageLength);    
   }
   return succes;
-}
-
-bool AbstractRFMessageControl::getUnusedMessage(MessageQueueItem ** item, MessageQueueSorter * sorter){
-  // should be sorter->getUnusedMessage()
-  return sorter->getUnusedItem(item);
-  //return findMessage(-1, -1, 0, item, queue);
 }
 
 void AbstractRFMessageControl::acknowledge(MessageQueueItem * acknowledgement){
@@ -139,8 +141,8 @@ bool AbstractRFMessageControl::send(MessageQueueItem * item){
   return m_transceiver->send(item->getBuffer(),length);
 }
 
-void AbstractRFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint8_t messageType){
-  existing->transition(messageType);
+void AbstractRFMessageControl::sendAcknowledge(MessageQueueItem * existing){
+  //existing->transition(messageType);
   send(existing);
 }
 
@@ -148,13 +150,13 @@ void AbstractRFMessageControl::sendAcknowledge(MessageQueueItem * existing, uint
  *  channel = sender|receiver
  *     8Bit =   4Bit|4Bit
  */
-bool AbstractRFMessageControl::toUs(uint8_t channel)
+bool AbstractRFMessageControl::isRequest(uint8_t channel)
 {
   uint8_t receiver =  channel & 0xF;
   return receiver == m_ourChannelID;
 }
 
-bool AbstractRFMessageControl::fromUs(uint8_t channel)
+bool AbstractRFMessageControl::isReply(uint8_t channel)
 {
   uint8_t sender = (channel >> 4) & 0xF;
   return sender == m_ourChannelID;
@@ -170,39 +172,38 @@ void AbstractRFMessageControl::handleIncommingMessages(){
   uint8_t length = sizeof(message_data_t);
   while (m_transceiver->get_message(buffer, &length)){
     received.init(buffer, length);
-    uint8_t messageType = received.getMessageType(); 
     uint8_t messageId = received.getMessageId();
     uint8_t channel = received.getChannel();
     
-    if(fromUs(channel) && (messageType == ACKNOWLEDGE )){
+    if(isReply(channel)){
       acknowledge(&received);
-    } else if(toUs(channel)){
+      // received can contain a command that needs to be handled
+      handleIncommingReply(&received);
+      
+    } else if(isRequest(channel)){
       
       /* lookup if we already have that message */
       bool found = findMessage(channel, messageId, -1, &existing, m_received);
 
-      if(messageType == MESSAGE){
-
-        if(!found){
-          found = m_receivedSorter.getUnusedItem(&existing);
-          if(found){
-            existing->init(buffer, length);
-            existing->setRetriesLeft(MAXRETRIES + 1);
-	   handleIncommingMessage(existing);
-          }
-        }
+      if(!found){
+        found = m_receivedSorter.getUnusedItem(&existing);
         if(found){
-          sendAcknowledge(existing, ACKNOWLEDGE);
+          existing->init(buffer, length);
+          existing->setRetriesLeft(MAXRETRIES + 1);
+          handleIncommingMessage(existing);
         }
       }
+      if(found){
+        sendAcknowledge(existing);
+      }
+    
     }
   }
   m_receivedSorter.reorder();
 }
 
-void AbstractRFMessageControl::handleIncommingMessage(MessageQueueItem * item){
- 
-}
+void AbstractRFMessageControl::handleIncommingMessage(MessageQueueItem* received){}
+void AbstractRFMessageControl::handleIncommingReply(MessageQueueItem* received){}
 
 void AbstractRFMessageControl::decrementReceivedMessagesRetriesLeft()
 {
@@ -215,6 +216,9 @@ void AbstractRFMessageControl::decrementReceivedMessagesRetriesLeft()
      if (item->getRetriesLeft() > 0){
        item->decrementRetriesLeft();
        retriesLeft = item->getRetriesLeft();
+       // not relevant anymore
+       // all items are discarted
+       // what we want to know is how may resends we did
        if(retriesLeft == 0 && notifyDiscartedItem != NULL)
          notifyDiscartedItem(item);
      }

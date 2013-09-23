@@ -5,8 +5,7 @@
 
 
 typedef struct message_header_s {
-  message_header_s() : type(0),id(0), channel(0), retries(0), length(0){}
-  uint8_t type;
+  message_header_s() : id(0), channel(0), retries(0), length(0){}
   uint8_t id;
   uint8_t channel;
   uint8_t retries;
@@ -30,6 +29,7 @@ public:
   
   void getMessage(uint8_t * message, uint8_t * length);
   uint8_t * getData();
+  void setData( uint8_t * message, uint8_t messageLength);
 
   uint8_t * getBuffer();
   uint8_t getMessageId();
@@ -37,14 +37,10 @@ public:
   uint8_t getChannel();
   uint8_t getRetriesLeft();
   void setRetriesLeft(uint8_t retries);
-
-  uint8_t getMessageType();
   
   void decrementRetriesLeft();
-  void transition(uint8_t acknowledgementType);
   uint8_t getLength();
 private:  
-  void setMessageType(uint8_t messageType);
   
   void setChannel(uint8_t channel);
   void setMessageId(uint8_t messageId);
