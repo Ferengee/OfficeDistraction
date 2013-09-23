@@ -26,7 +26,7 @@ bool RFSenderReceiver::have_message()
 bool RFSenderReceiver::send(uint8_t* buf, uint8_t len)
 {
   bool success = vw_send(buf, len);
- // vw_wait_tx(); // 
+  vw_wait_tx(); // 
   return success;
 }
 
