@@ -5,12 +5,11 @@ PWMControl::PWMControl(int pwmPin)
   _pin = pwmPin;
   _shape = OFF;
 }
-PWMControl::PWMControl()
-{
-}
+
 PWMControl::PWMControl()
 {
   _pin = -1;
+  _shape = OFF;
 }
 
 void PWMControl::update()
