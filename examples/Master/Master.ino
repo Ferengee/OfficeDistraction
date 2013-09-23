@@ -89,6 +89,8 @@ RemoteControlledRelay relais;
 
 void setup()
 {
+  tr.init(12,11,2000);
+
   Serial.begin(9600);
 
   in.setStream(&Serial);

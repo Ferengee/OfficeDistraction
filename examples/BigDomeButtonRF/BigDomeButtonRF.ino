@@ -36,6 +36,8 @@ void handleLedCommand(CommandContext * context, pwm_command_t cmd)
 
 
 void setup(){
+  tr.init(12,11,2000);
+
   pinMode(button_pin, INPUT);  
   pinMode(led_pin, OUTPUT);  
   pinMode(vibrate_pin, OUTPUT);  

@@ -41,6 +41,7 @@ public:
   }
   
   virtual void prepare(){
+    length = 6;
     get(message, length);
   }
  

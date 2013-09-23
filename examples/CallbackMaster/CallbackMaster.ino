@@ -17,6 +17,7 @@ ButtonMessageControl bmc = ButtonMessageControl(&tr);
 
 void handleButtonCommand(CommandContext * context, digital_command_t cmd)
 {
+  
   Serial.print("handle button: ");
   Serial.println(cmd.value);
   od_command_header_t response; 
@@ -30,7 +31,8 @@ void handleButtonCommand(CommandContext * context, digital_command_t cmd)
 }
 
 void setup(){
- 
+  tr.init(12,11,2000);
+
   bmc.setChannelID(MASTER);
 
   bmc.handleButtonCommand = handleButtonCommand;
