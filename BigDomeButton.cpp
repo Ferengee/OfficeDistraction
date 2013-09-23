@@ -2,7 +2,7 @@
 
 BigDomeButton::BigDomeButton(int pwmLedPin, int buttonPin)
 {
-  m_pwmLedPin = pwmLedPin;
+  led.setPin(pwmLedPin);
   m_buttonPin = buttonPin;
 }
 

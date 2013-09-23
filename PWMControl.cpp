@@ -8,9 +8,16 @@ PWMControl::PWMControl(int pwmPin)
 PWMControl::PWMControl()
 {
 }
+PWMControl::PWMControl()
+{
+  _pin = -1;
+}
 
 void PWMControl::update()
 {
+  if(_pin == -1)
+    return;
+  
   switch(_shape){
     
     case SINE:
@@ -26,6 +33,9 @@ void PWMControl::update()
 
 void PWMControl::set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
 {
+  if(_pin == -1)
+    return;
+   
   switch(shape){
     case OFF:
       analogWrite(_pin, 0);

@@ -21,7 +21,7 @@ public:
   void set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period);
   void update();
   bool isOff(){return _shape == OFF;}
-
+  void setPin(int pwmPin){_pin = pwmPin;}
 private:
   int pin;
   uint8_t _shape; // sine | square | on |off
