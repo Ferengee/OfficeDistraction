@@ -15,11 +15,18 @@ RFSenderReceiver tr = RFSenderReceiver();
 
 ButtonMessageControl bmc = ButtonMessageControl(&tr);
 
-void handleButtonCommand(bool value)
+void handleButtonCommand(CommandContext * context, digital_command_t cmd)
 {
   Serial.print("handle button: ");
-  Serial.println(value);
-  bmc.sendLedCommand(1, SINE, 125, 10, 255, 30);
+  Serial.println(cmd.value);
+  od_command_header_t response; 
+  response.label= LED;
+  response.pwm.shape = SINE;
+  response.pwm.offset = 125; 
+  response.pwm.duration = 10;
+  response.pwm.amplitude = 255, 
+  response.pwm.period = 30;
+  context->reply(&response);
 }
 
 void setup(){

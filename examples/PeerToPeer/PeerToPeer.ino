@@ -19,8 +19,7 @@ void receiveMessageItem(MessageQueueItem item){
   uint8_t message[MESSAGE_SIZE];
   uint8_t length = MESSAGE_SIZE;
   item.getMessage(message, &length);
-  Serial.print(":");
-  Serial.print(item.getMessageType());
+
   Serial.print(":");
   Serial.println((char *)message);
 }
@@ -28,9 +27,8 @@ void receiveMessageItem(MessageQueueItem item){
 void notifyDiscartedItem(MessageQueueItem* item)
 {
   Serial.print("Discarted item: ");
-  Serial.print(item->getMessageId());
-  Serial.print(":");
-  Serial.println(item->getMessageType());
+  Serial.println(item->getMessageId());
+
 }
 
 class Send : public MiniRPCMethod

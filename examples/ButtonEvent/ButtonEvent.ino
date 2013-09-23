@@ -1,3 +1,4 @@
+#include <VirtualWire.h>
 #include <StreamParser.h>
 #include <StreamWrapper.h>
 #include <BufferManager.h>

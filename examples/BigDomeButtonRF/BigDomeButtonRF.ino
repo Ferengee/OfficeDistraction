@@ -24,13 +24,13 @@ void clicked(bool up, int deltaT){
     bmc.sendButtonEvent(up);
 }
 
-void handleVibrateCommmand(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
+void handleVibrateCommmand(CommandContext * context, pwm_command_t cmd)
 {
-  vibrate.set(shape, offset, duration, amplitude, period);
+  vibrate.set(cmd.shape, cmd.offset, cmd.duration, cmd.amplitude, cmd.period);
 }
-void handleLedCommand(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period)
+void handleLedCommand(CommandContext * context, pwm_command_t cmd)
 {
-  led.set(shape, offset, duration, amplitude, period);
+  led.set(cmd.shape, cmd.offset, cmd.duration, cmd.amplitude, cmd.period);
 }
 
 
