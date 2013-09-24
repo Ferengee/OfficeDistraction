@@ -20,6 +20,7 @@ AbstractRFMessageControl::AbstractRFMessageControl(BaseSenderReceiver * transcei
   notifyDiscartedItem = NULL;
   _max_send_time = -1;
   _min_send_time = -1;
+  _listen_grace = MIN_SEND_TIMEOUT;
   
 }
 
@@ -112,8 +113,8 @@ void AbstractRFMessageControl::sendRemainingMessages(){
   MessageQueueItem * item;
   MessageQueueItem ** sortedQueue = m_sendingSorter.reorder();
   bool channelSeen[MAXMESSAGECOUNT] = {false};
-  int i;
-  int j;
+  bool reorder_needed = false;
+  int i, j;
   for (i=0; i < MAXMESSAGECOUNT; i++)
   {
     item = sortedQueue[i];
@@ -121,20 +122,25 @@ void AbstractRFMessageControl::sendRemainingMessages(){
       /* update the rest of the channelSeen map */
       for(j=i; j < MAXMESSAGECOUNT; j++)
       {
-        if(sortedQueue[j]->getChannel() == item->getChannel()){
-          channelSeen[j] = true; // dont acidently set it to false if it was true already
-        }
+        if(sortedQueue[j]->getChannel() == item->getChannel())
+          channelSeen[j] = true;
       }
       if (item->getRetriesLeft() > 0){
         item->decrementRetriesLeft();
-        send(item);
-        logSendTime(now, millis());
-	m_lastSendAt = now;
-	break;
+        if(item->isDestroyed() && notifyDiscartedItem != NULL){
+          reorder_needed = true;
+          notifyDiscartedItem(item);
+        }else{  
+          send(item);
+          logSendTime(now, millis());
+          m_lastSendAt = now;
+          break;
+        }
       }
     }
   }
-  m_sendingSorter.reorder();
+  if(reorder_needed)
+    m_sendingSorter.reorder();
 }
 
 void AbstractRFMessageControl::logSendTime(long unsigned int start, long unsigned int end)
@@ -190,36 +196,43 @@ void AbstractRFMessageControl::handleIncommingMessages(){
   MessageQueueItem received = MessageQueueItem();
   MessageQueueItem * existing = NULL;
   uint8_t length = sizeof(message_data_t);
-  while (m_transceiver->get_message(buffer, &length)){
-    received.init(buffer, length);
-    uint8_t messageId = received.getMessageId();
-    uint8_t channel = received.getChannel();
-    
-    if(isReply(channel)){
-      acknowledge(&received);
-      // received can contain a command that needs to be handled
-      handleIncommingReply(&received);
+  while (m_transceiver->have_message()){
+    bool valid_message = m_transceiver->get_message(buffer, &length);
+    if(valid_message){
+      received.init(buffer, length);
+      uint8_t messageId = received.getMessageId();
+      uint8_t channel = received.getChannel();
       
-    } else if(isRequest(channel)){
-      
-      /* lookup if we already have that message */
-      bool found = findMessage(channel, messageId, -1, &existing, m_received);
+      if(isReply(channel)){
+        acknowledge(&received);
+        // received can contain a command that needs to be handled
+        handleIncommingReply(&received);
+        
+      } else if(isRequest(channel)){
+        
+        /* lookup if we already have that message */
+        bool found = findMessage(channel, messageId, -1, &existing, m_received);
 
-      if(!found){
-        found = m_receivedSorter.getUnusedItem(&existing);
-        if(found){
-          existing->init(buffer, length);
-          existing->setRetriesLeft(MAXRETRIES + 1);
-          handleIncommingMessage(existing);
+        if(!found){
+          found = m_receivedSorter.getUnusedItem(&existing);
+          if(found){
+            existing->init(buffer, length);
+            existing->setRetriesLeft(MAXRETRIES + 1);
+            handleIncommingMessage(existing);
+          }
         }
+        if(found){
+          sendAcknowledge(existing);
+        }
+        _listen_grace = MIN_SEND_TIMEOUT;
+;
+      } else {
+        // listen longer and keep mouth shut
+        _listen_grace = MIN_SEND_TIMEOUT + EXTRA_LISTEN_GRACE;
       }
-      if(found){
-        sendAcknowledge(existing);
-      }
-    
     }
   }
-  m_receivedSorter.reorder();
+ 
 }
 
 void AbstractRFMessageControl::handleIncommingMessage(MessageQueueItem* received){}
@@ -229,25 +242,21 @@ void AbstractRFMessageControl::decrementReceivedMessagesRetriesLeft()
 {
   MessageQueueItem * item;
   int i;
-  int retriesLeft;
+  bool reorder_needed = false;
+
   for (i=0; i < MAXMESSAGECOUNT; i++)
   {
      item = &m_received[i];
-     if (item->getRetriesLeft() > 0){
-       item->decrementRetriesLeft();
-       retriesLeft = item->getRetriesLeft();
-       // not relevant anymore
-       // all items are discarted
-       // what we want to know is how may resends we did
-       if(retriesLeft == 0 && notifyDiscartedItem != NULL)
-         notifyDiscartedItem(item);
-     }
+     if (item->getRetriesLeft() > 0 && item->decrementRetriesLeft() == 0)
+         reorder_needed = true;
   }
+  if(reorder_needed)
+    m_receivedSorter.reorder();
 }
 
 void AbstractRFMessageControl::update(){
   unsigned long now = millis();
-  if (now - m_lastDecrementRun > MIN_SEND_TIMEOUT){
+  if (now - m_lastDecrementRun > _listen_grace){
     decrementReceivedMessagesRetriesLeft();
     m_lastDecrementRun = now;
   }

@@ -7,6 +7,7 @@
 
 #include "BaseSenderReceiver.h"
 #define MIN_SEND_TIMEOUT 550
+#define EXTRA_LISTEN_GRACE 500
 
 typedef void (* MessageReceivedEventHandler) (MessageQueueItem item);
 
@@ -110,6 +111,7 @@ private:
   long unsigned int m_lastSendAt;
   int _max_send_time;
   int _min_send_time;
+  long unsigned int _listen_grace;
 };
 
 class RFMessageControl: public AbstractRFMessageControl
@@ -121,8 +123,6 @@ public:
 
 private:
     MessageReceivedEventHandler callback;
-  
-
 };
 
 #endif

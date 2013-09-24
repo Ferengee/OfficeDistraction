@@ -38,7 +38,7 @@ public:
   uint8_t getRetriesLeft();
   void setRetriesLeft(uint8_t retries);
   
-  void decrementRetriesLeft();
+  uint8_t decrementRetriesLeft();
   uint8_t getLength();
 private:  
   

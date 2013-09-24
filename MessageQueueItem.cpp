@@ -43,7 +43,7 @@ void MessageQueueItem::getMessage(uint8_t * message, uint8_t * length){
 }
 
 
-void MessageQueueItem::decrementRetriesLeft()
+uint8_t MessageQueueItem::decrementRetriesLeft()
 {
    uint8_t retriesLeft = m_messageData.head.retries;
    retriesLeft--;
@@ -51,6 +51,7 @@ void MessageQueueItem::decrementRetriesLeft()
    if (m_messageData.head.retries > retriesLeft){
      m_messageData.head.retries = retriesLeft; 
    }
+   return m_messageData.head.retries;
 }
 void MessageQueueItem::init(uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength)
 {
