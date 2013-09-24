@@ -61,6 +61,7 @@ public:
    */
   uint8_t getChannel(uint8_t toChannelID);
   void setChannelID(uint8_t channelID);
+  void reportSendTime( int &min, int &max);
 
   NotifyDiscartedItem notifyDiscartedItem;
 protected:
@@ -99,6 +100,7 @@ private:
    * so it also returns true on a received acknowledgement which was send in reply to one of our messages.
    */
   bool isReply(uint8_t channel);
+    void logSendTime(long unsigned int now, long unsigned int millis);
 
   uint8_t m_lastMessageId;
   unsigned long m_lastDecrementRun;
@@ -106,6 +108,8 @@ private:
   uint8_t m_ourChannelID;
   BaseSenderReceiver * m_transceiver;
   long unsigned int m_lastSendAt;
+  int _max_send_time;
+  int _min_send_time;
 };
 
 class RFMessageControl: public AbstractRFMessageControl
@@ -117,6 +121,7 @@ public:
 
 private:
     MessageReceivedEventHandler callback;
+  
 
 };
 

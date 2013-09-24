@@ -18,6 +18,9 @@ AbstractRFMessageControl::AbstractRFMessageControl(BaseSenderReceiver * transcei
   m_sendingSorter.init(m_sending);
   m_receivedSorter.init(m_received);
   notifyDiscartedItem = NULL;
+  _max_send_time = -1;
+  _min_send_time = -1;
+  
 }
 
 bool AbstractRFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
@@ -125,6 +128,7 @@ void AbstractRFMessageControl::sendRemainingMessages(){
       if (item->getRetriesLeft() > 0){
         item->decrementRetriesLeft();
         send(item);
+        logSendTime(now, millis());
 	m_lastSendAt = now;
 	break;
       }
@@ -132,6 +136,22 @@ void AbstractRFMessageControl::sendRemainingMessages(){
   }
   m_sendingSorter.reorder();
 }
+
+void AbstractRFMessageControl::logSendTime(long unsigned int start, long unsigned int end)
+{
+  int delta = end - start;
+  if( _max_send_time == -1 || delta > _max_send_time)
+    _max_send_time = delta;
+  if( _min_send_time == -1 || delta <= _min_send_time)
+    _min_send_time = delta;
+}
+
+void AbstractRFMessageControl::reportSendTime( int &min, int &max)
+{
+  min =  _min_send_time;
+  max = _max_send_time;
+}
+
 
 /* sent full buffer for now
  * optimize to send only relevant data later
