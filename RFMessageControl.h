@@ -63,6 +63,7 @@ public:
   uint8_t getChannel(uint8_t toChannelID);
   void setChannelID(uint8_t channelID);
   void reportSendTime( int &min, int &max);
+  void reportMessageCount(int &failures, int &succeses);
 
   NotifyDiscartedItem notifyDiscartedItem;
 protected:
@@ -101,7 +102,7 @@ private:
    * so it also returns true on a received acknowledgement which was send in reply to one of our messages.
    */
   bool isReply(uint8_t channel);
-    void logSendTime(long unsigned int now, long unsigned int millis);
+  void logSendTime(long unsigned int now, long unsigned int millis);
 
   uint8_t m_lastMessageId;
   unsigned long m_lastDecrementRun;
@@ -111,6 +112,8 @@ private:
   long unsigned int m_lastSendAt;
   int _max_send_time;
   int _min_send_time;
+  int _invalid_received_message_count;
+  int _valid_received_message_count;
   long unsigned int _listen_grace;
 };
 

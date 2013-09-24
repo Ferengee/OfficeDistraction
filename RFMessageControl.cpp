@@ -22,6 +22,8 @@ AbstractRFMessageControl::AbstractRFMessageControl(BaseSenderReceiver * transcei
   _min_send_time = -1;
   _listen_grace = MIN_SEND_TIMEOUT;
   
+  _valid_received_message_count = 0;
+  _invalid_received_message_count = 0;
 }
 
 bool AbstractRFMessageControl::sendMessage(uint8_t toChannelID, uint8_t * message, uint8_t messageLength){
@@ -159,6 +161,8 @@ void AbstractRFMessageControl::reportSendTime( int &min, int &max)
 }
 
 
+
+
 /* sent full buffer for now
  * optimize to send only relevant data later
  */
@@ -199,6 +203,8 @@ void AbstractRFMessageControl::handleIncommingMessages(){
   while (m_transceiver->have_message()){
     bool valid_message = m_transceiver->get_message(buffer, &length);
     if(valid_message){
+      _valid_received_message_count++;
+
       received.init(buffer, length);
       uint8_t messageId = received.getMessageId();
       uint8_t channel = received.getChannel();
@@ -225,8 +231,9 @@ void AbstractRFMessageControl::handleIncommingMessages(){
           sendAcknowledge(existing);
         }
         _listen_grace = MIN_SEND_TIMEOUT;
-;
       } else {
+        _invalid_received_message_count++;
+
         // listen longer and keep mouth shut
         _listen_grace = MIN_SEND_TIMEOUT + EXTRA_LISTEN_GRACE;
       }
@@ -275,6 +282,11 @@ uint8_t AbstractRFMessageControl::getChannelID(){
 uint8_t AbstractRFMessageControl::getChannel(uint8_t toChannelID){
   return ((m_ourChannelID & 0xF) << 4) | (toChannelID & 0xF);
   
+}
+void AbstractRFMessageControl::reportMessageCount(int& failures, int& succeses)
+{
+  failures = _invalid_received_message_count;
+  succeses = _valid_received_message_count;
 }
 
 void AbstractRFMessageControl::setChannelID(uint8_t channelId){
