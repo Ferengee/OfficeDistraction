@@ -22,7 +22,7 @@ class MessageQueueItem
 public:
   MessageQueueItem();
   void init (uint8_t channel, uint8_t messageId, uint8_t * message, uint8_t messageLength);
-  void init(uint8_t* messageBuffer, uint8_t length);
+  void init(uint8_t* messageData);
 
   void destroy();
   bool isDestroyed();

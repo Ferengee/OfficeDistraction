@@ -3,10 +3,7 @@
 
 /*
  * TODO: 
- * - remove message type
- * - rewrite message/acknowledge to request/reply
- * - delegate responsibility of reply to handleIncommingMessage
- * - make it obvious that requests should be replied
+ * centralize properties for logging
  * 
  */
 
@@ -167,7 +164,8 @@ void AbstractRFMessageControl::reportSendTime( int &min, int &max)
  * optimize to send only relevant data later
  */
 bool AbstractRFMessageControl::send(MessageQueueItem * item){
-  uint8_t length = sizeof(message_data_t);
+  //uint8_t length = sizeof(message_data_t);
+  uint8_t length = item->getLength() + sizeof(message_header_t);
   return m_transceiver->send(item->getBuffer(),length);
 }
 
@@ -205,7 +203,7 @@ void AbstractRFMessageControl::handleIncommingMessages(){
     if(valid_message){
       _valid_received_message_count++;
 
-      received.init(buffer, length);
+      received.init(buffer);
       uint8_t messageId = received.getMessageId();
       uint8_t channel = received.getChannel();
       
@@ -222,7 +220,7 @@ void AbstractRFMessageControl::handleIncommingMessages(){
         if(!found){
           found = m_receivedSorter.getUnusedItem(&existing);
           if(found){
-            existing->init(buffer, length);
+            existing->init(buffer);
             existing->setRetriesLeft(MAXRETRIES + 1);
             handleIncommingMessage(existing);
           }

@@ -68,10 +68,9 @@ void MessageQueueItem::setData( uint8_t * message, uint8_t messageLength)
   memcpy(m_messageData.data, message, m_messageData.head.length);  
 }
 
-void MessageQueueItem::init(uint8_t * messageData, uint8_t length)
+void MessageQueueItem::init(uint8_t * messageData)
 {
   memset(&m_messageData,0,sizeof(message_data_t));
-  m_messageData.head.length = length;
   memcpy(&m_messageData , messageData, sizeof(message_data_t)); 
 }
 
