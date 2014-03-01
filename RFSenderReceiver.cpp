@@ -11,6 +11,16 @@ void RFSenderReceiver::init(int txPin, int rxPin, int speed)
   } 
 }
 
+bool RFSenderReceiver::is_receiving()
+{
+    return vw_rx_active();
+}
+
+bool RFSenderReceiver::is_transmitting()
+{
+    return vw_tx_active();
+}
+
 
 bool RFSenderReceiver::get_message(uint8_t* buf, uint8_t* len)
 {

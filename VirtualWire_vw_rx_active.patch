@@ -1,0 +1,11 @@
+*** VirtualWire.cpp~	2013-12-26 23:22:07.756108719 +0100
+--- VirtualWire.cpp	2013-12-26 23:22:07.000000000 +0100
+*************** void vw_rx_stop()
+*** 497 ****
+--- 498,503 ----
++ // Return true if the reveiver might be receiving
++ uint8_t vw_rx_active()
++ {
++     return vw_rx_receiving;
++ }
++ 
