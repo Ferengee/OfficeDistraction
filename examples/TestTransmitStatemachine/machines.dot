@@ -1,0 +1,21 @@
+digraph{
+  node [shape = ellipse,height=.1];
+
+  starting->won[label=WIN];
+  starting->lost[label=LIFECYCLETIMEOUT];
+  starting->lost[label=LOSE];
+  won->done[label=LIFECYCLETIMEOUT];
+  lost->done[label=LIFECYCLETIMEOUT];
+  waitForSilence->sendMessage[label=SILENCE];
+  sendMessage->sendMessage[label=RETRY];
+  sendMessage->wait[label=ACKNOWLEDGE];
+  wait->waitForSilence[label=RETRY];
+
+  starting[penwidth=2,label="starting:initLifeCycle"]
+  lost[label="lost:initShutdownTimer"]
+  won[label="won:initShutdownTimer"]
+  done[label="done:powerOff"]
+  waitForSilence[penwidth=2,label="waitForSilence:initSilenceCounter"]
+  sendMessage[label="sendMessage:initResendTimer"]
+  wait[label="wait:initRestartTimer"]
+}

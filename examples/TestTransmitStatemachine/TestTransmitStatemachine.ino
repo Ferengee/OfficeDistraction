@@ -1,121 +1,89 @@
-#include <SimpleStateMachine.h>
-#include <Schedulers.h>
-#include <EventChannel.h>
-#include <VirtualWire.h>
+#include "Schedulers.h"
+#include "EventChannel.h"
 
-#define MY_ID 1
+#define POWER_PIN 4
+#define LED_PIN 13
+#define SILENCE_COUNT 4
+#define RESEND_TIMEOUT 400
+#define RESTART_TIMEOUT 1000
+#define LOSE_TIMEOUT 10000
+#define SHUTDOWN_TIMEOUT 5000
+/*
+ * Read the Statemachines tab to see the state machine configuration
+ * 
+ */
+enum TransitionEvents {WIN, LOSE, LIFECYCLETIMEOUT, SILENCE, RETRY, ACKNOWLEDGE};
+
 
 typedef struct {
-  uint8_t ids;
-  uint8_t request_count;
-  unsigned long uptime;
-} message_data_t;
+  Scheduler timer;
+  EventChannel * channel;
+} lifecycle_context_t;
 
-bool succes = false;
+typedef struct {
+  CountdownTimer silenceCounter;
+  Scheduler resendTimer;
+  Scheduler restartTimer;
+  EventChannel * channel;
 
-/*
- * listen: try to receive a message, decode it and send an event on the event channel
- */
-class RFTransceiver
-{
-private:
-  EventChannel * eventChannel;
-  int id;
-public:
-  void setId(int id){ this.id = id;}
-  void sendMessage(uint8_t request_count){
-    message_data_t msg;
-    msg.uptime = millis();
-    msg.request_count = request_count;
-    msg.ids = this->id;
-    
-    digitalWrite(13, true); // Flash a light to show transmitting
-    vw_send((uint8_t *)&msg, sizeof(message_data_t));
-    // I do want to wait until the message is gone, because i cant do anything else 
-    // which would be usefull
-    // button presses are ignored, incomming messages cant be decoded while transmitting anyway
-    vw_wait_tx(); // Wait until the whole message is gone
-    
-    digitalWrite(13, false);
+} messagecycle_context_t;
+
+Schedulers schedulers;
+EventChannel eventChannel;
+
+void lifecycleTimeOut(void * data){
+  ((lifecycle_context_t *)data)->channel->send(LIFECYCLETIMEOUT, data);  
+}
+void initLifeCycle(int token, void * data){
+  lifecycle_context_t * context = (lifecycle_context_t *)data;
+  context->timer.once(LOSE_TIMEOUT, lifecycleTimeOut, data);
   
-  }
-
-  
-  bool tryReceiveMessage(bool *succes){
-    //TODO: move wait to trigger delta, dont want to actualy wait
-    *succes = vw_wait_rx_max(200);
-    uint8_t buf[VW_MAX_MESSAGE_LEN];
-    uint8_t buflen = VW_MAX_MESSAGE_LEN;
-    if(vw_get_message(buf, &buflen)){
-      message_data_t * msg = (message_data_t *)buf; 
-      if(msg->request_count == 0){
-        *succes = (msg->ids == MY_ID);
-        return true;
-      }else{
-        return false; 
-      }
-    }
-    return false;
-  }
-
-
 }
 
-Machine failure;
-Machine flow;
 
-State lost;
-State startState;
-State waitForSilence;
-State sendMessage;
-State acknowledged;
-State won;
-
-
-Vertex links[7];
-
-
-void setup()
-{
-  Vertex * l = links;
-  waitForSilence.on(l++, SILENCE)->to(sendMessage);
-  //TODO: retry loop
-  sendMessage.on(l++, ACK_MSG)->to(acknowledged);
-  acknowledged.on(l++, ACK_WIN)->to(won);
-
-  pinMode(led_pin, OUTPUT);
-  pinMode(13, OUTPUT);
-
-  vw_rx_start(); // Start the receiver PLL running
-  // Initialise the IO and ISR
-//  vw_set_ptt_inverted(true); // Required for DR3100
-  vw_setup(2000); // Bits per sec
-  
-  
-  //
-  uint8_t request_count = 1;
-  // listen for silence
-  while(millis() > 20 || vw_rx_active()){
-    delay(1);
-  };
-  
-  while(request_count < 7){
-    sendMessage(request_count);
-    if(tryReceiveMessage(&succes)){
-        break;
-    }else{
-      request_count++;
-      delay(15 * request_count);
-    }
+void initShutdownTimer(int token, void * data){
+  if(token == WIN){
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
   }
+  ((lifecycle_context_t *)data)->timer.once(SHUTDOWN_TIMEOUT, lifecycleTimeOut, data);
 }
-void loop()
-{
-  //digitalWrite(led_pin, vw_rx_active());
-  digitalWrite(13, HIGH);
-  delay(100);
-  if(!succes)
-    digitalWrite(13,LOW);
-  delay(100);
+void powerOff(int token, void * data){
+  digitalWrite(POWER_PIN, LOW);
 }
+
+void emitSilence(void * data){
+  ((messagecycle_context_t *)data)->channel->send(SILENCE, data);  
+}
+void initSilenceCounter(int token, void * data){
+  //TODO configure a reset for the silence test
+  //((messagecycle_context_t *)data)->senderReciever
+  ((messagecycle_context_t *)data)->silenceCounter.start(SILENCE_COUNT, emitSilence, data);
+}
+
+void emitRetry(void * data){
+  ((messagecycle_context_t *)data)->channel->send(RETRY, data);  
+}
+
+void initResendTimer(int token, void * data){
+  ((messagecycle_context_t *)data)->resendTimer.once(RESEND_TIMEOUT, emitRetry, data);
+
+}
+void initRestartTimer(int token, void * data){
+  ((messagecycle_context_t *)data)->restartTimer.once(RESTART_TIMEOUT, emitRetry, data);
+}
+
+messagecycle_context_t messagecycleContext;
+lifecycle_context_t lifecycleContext;
+
+void setup(){
+  //digitalWrite(POWER_PIN, HIGH);
+  messagecycleContext.channel = &eventChannel;
+  lifecycleContext.channel = &eventChannel;
+  
+  setup_machines(); 
+  
+}
+void loop(){}
 

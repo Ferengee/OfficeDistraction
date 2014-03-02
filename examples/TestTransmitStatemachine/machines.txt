@@ -1,0 +1,28 @@
+# life cycle
+starting-WIN->won
+starting-LIFECYCLETIMEOUT->lost
+starting-LOSE->lost
+won-LIFECYCLETIMEOUT->done
+lost-LIFECYCLETIMEOUT->done
+
+
+# message cycle
+waitForSilence-SILENCE->sendMessage
+sendMessage-RETRY->sendMessage
+sendMessage-ACKNOWLEDGE->wait
+wait-RETRY->waitForSilence
+
+# life cycle functions
+starting:initLifeCycle
+lost:initShutdownTimer
+won:initShutdownTimer
+done:powerOff
+
+# message cycle functions
+waitForSilence:initSilenceCounter
+sendMessage:initResendTimer
+wait:initRestartTimer
+
+# machines
+lifeCycle(starting)
+messageCycle(waitForSilence)
