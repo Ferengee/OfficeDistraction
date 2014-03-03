@@ -1,14 +1,65 @@
-#include <SimpleStateMachine.h>
-#include <EventChannel.h>
 
 
+#define CONTEXT ((process_context_t *)data)
 
-State starting, won, lost, done, waitForSilence, sendMessage, wait;
+void emitLifecycleTimeOut(void * data){
+  Serial.println("lifecycle Timeout");
 
-Vertex state_machine_links[9];
+  CONTEXT->channel.send(LIFECYCLETIMEOUT, data);  
+}
+void initLifeCycle(int token, void * data){
+  Serial.println("init life cycle");
+  CONTEXT->lifecycleTimer.once(LOSE_TIMEOUT, emitLifecycleTimeOut, data);
+  
+}
 
-Machine lifeCycle = Machine(starting);
-Machine messageCycle = Machine(waitForSilence);
+void initShutdownTimer(int token, void * data){
+  if(token == WIN){
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+  CONTEXT->lifecycleTimer.once(SHUTDOWN_TIMEOUT, emitLifecycleTimeOut, data);
+}
+void powerOff(int token, void * data){
+  Serial.println("power off");
+
+  digitalWrite(POWER_PIN, LOW);
+  exit(0);
+}
+
+void emitSilence(void * data){
+  CONTEXT->channel.send(SILENCE, data);  
+}
+void pollSilence(void * data){
+  if(CONTEXT->senderReceiver.is_receiving()){
+    CONTEXT->silenceCounter.reset();
+  }else{
+    CONTEXT->silenceCounter.trigger();
+  }
+}
+void initSilenceCounter(int token, void * data){
+  //TODO configure a reset for the silence test
+  //CONTEXT->senderReciever
+  Serial.println("Wait for silence");
+  CONTEXT->silencePoll.every(SILENCE_POLL, pollSilence, data);
+  CONTEXT->silenceCounter.start(SILENCE_COUNT, emitSilence, data);
+}
+
+void emitRetry(void * data){
+  CONTEXT->channel.send(RETRY, data);  
+}
+
+void initResendTimer(int token, void * data){
+  Serial.println("send message");
+  CONTEXT->resendTimeout = CONTEXT->resendTimeout + RESEND_BACKOFF;
+  CONTEXT->resendTimer.once(CONTEXT->resendTimeout, emitRetry, data);
+
+}
+void initRestartTimer(int token, void * data){
+  CONTEXT->restartTimer.once(RESTART_TIMEOUT, emitRetry, data);
+}
+
 
 
 void setup_machines(){
@@ -24,6 +75,7 @@ void setup_machines(){
 /*  message cycle */
   waitForSilence.on(l++, SILENCE)->to(sendMessage);
   sendMessage.on(l++, RETRY)->to(sendMessage);
+  sendMessage.on(l++, LIFECYCLETIMEOUT)->to(wait);
   sendMessage.on(l++, ACKNOWLEDGE)->to(wait);
   wait.on(l++, RETRY)->to(waitForSilence);
 
@@ -39,10 +91,10 @@ void setup_machines(){
   wait.enterfunc = initRestartTimer;
 
 /*  machines */
-  eventChannel.addListener(lifeCycle);
-  eventChannel.addListener(messageCycle);
+  context.channel.addListener(lifeCycle);
+  context.channel.addListener(messageCycle);
 
-  lifeCycle.start(&messagecycleContext);
-  messageCycle.start(&lifecycleContext);
+  lifeCycle.start(&context);
+  messageCycle.start(&context);
 }
 
