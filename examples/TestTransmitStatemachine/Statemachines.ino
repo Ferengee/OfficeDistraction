@@ -14,6 +14,7 @@ void initLifeCycle(int token, void * data){
 }
 
 void initShutdownTimer(int token, void * data){
+  CONTEXT->messageCycle->stop();
   if(token == WIN){
     digitalWrite(LED_PIN, HIGH);
   } else {
@@ -57,6 +58,7 @@ void initResendTimer(int token, void * data){
 
 }
 void initRestartTimer(int token, void * data){
+  CONTEXT->resendTimeout = RESEND_TIMEOUT;
   CONTEXT->restartTimer.once(RESTART_TIMEOUT, emitRetry, data);
 }
 
@@ -74,8 +76,7 @@ void setup_machines(){
 
 /*  message cycle */
   waitForSilence.on(l++, SILENCE)->to(sendMessage);
-  sendMessage.on(l++, RETRY)->to(sendMessage);
-  sendMessage.on(l++, LIFECYCLETIMEOUT)->to(wait);
+  sendMessage.on(l++, RETRY)->to(waitForSilence);
   sendMessage.on(l++, ACKNOWLEDGE)->to(wait);
   wait.on(l++, RETRY)->to(waitForSilence);
 

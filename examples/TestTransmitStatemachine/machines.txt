@@ -8,7 +8,7 @@ lost-LIFECYCLETIMEOUT->done
 
 # message cycle
 waitForSilence-SILENCE->sendMessage
-sendMessage-RETRY->sendMessage
+sendMessage-RETRY->waitForSilence
 sendMessage-ACKNOWLEDGE->wait
 wait-RETRY->waitForSilence
 

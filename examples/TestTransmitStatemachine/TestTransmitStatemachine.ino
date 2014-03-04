@@ -20,7 +20,7 @@ enum TransitionEvents {WIN, LOSE, LIFECYCLETIMEOUT, SILENCE, RETRY, ACKNOWLEDGE}
 
 State starting, won, lost, done, waitForSilence, sendMessage, wait;
 
-Vertex state_machine_links[10];
+Vertex state_machine_links[9];
 
 Machine lifeCycle = Machine(starting);
 Machine messageCycle = Machine(waitForSilence);
@@ -35,6 +35,7 @@ typedef struct {
   int resendTimeout;
   Scheduler silencePoll;
   BaseSenderReceiver senderReceiver;
+  Machine * messageCycle;
 
 } process_context_t;
 
@@ -48,7 +49,7 @@ void setup(){
   context.schedulers.attach(context.restartTimer);
   context.schedulers.attach(context.lifecycleTimer);
   context.schedulers.attach(context.silencePoll);
-
+  context.messageCycle = &messageCycle;
   setup_machines(); 
   
 }
