@@ -1,0 +1,17 @@
+digraph{
+  node [shape = ellipse,height=.1];
+
+  newQuestion->oneAnswer[label=MESSAGE];
+  oneAnswer->newQuestion[label=NEXTQUESTION];
+  oneAnswer->moreAnswers[label=MESSAGE];
+  moreAnswers->moreAnswers[label=MESSAGE];
+  moreAnswers->newQuestion[label=NEXTQUESTION];
+  winnerUnknown->winnerKnown[label=TIMEOUT];
+  winnerKnown->winnerUnknown[label=NEXTQUESTION];
+
+  oneAnswer[label="oneAnswer:acceptAnswer"]
+  moreAnswers[label="moreAnswers:updateAnswer"]
+  newQuestion[penwidth=2,label="newQuestion:initQuestionContext"]
+  winnerUnknown[penwidth=2,label="winnerUnknown:logState"]
+  winnerKnown[label="winnerKnown:logState"]
+}

@@ -1,0 +1,37 @@
+# Handle messages
+newQuestion-MESSAGE->oneAnswer
+oneAnswer-NEXTQUESTION->newQuestion
+oneAnswer-MESSAGE->moreAnswers
+moreAnswers-MESSAGE->moreAnswers
+moreAnswers-NEXTQUESTION->newQuestion
+
+# do we have a winner
+winnerUnknown-TIMEOUT->winnerKnown
+winnerKnown-NEXTQUESTION->winnerUnknown
+
+
+# message cycle functions
+# acceptAnswer
+# - copy msg in context
+# - reset reply scheduler
+# - signal alarm
+oneAnswer:acceptAnswer
+
+# updateAnswer
+# - reset reply scheduler
+# - update message in context (if needed)
+moreAnswers:updateAnswer
+
+# initQuestionContext
+# - wipe answer from context
+newQuestion:initQuestionContext
+
+winnerUnknown:logState
+winnerKnown:logState
+
+# machines
+winnerCycle(winnerUnknown)
+questionCycle(newQuestion)
+
+# reply scheduler
+# reset: replyTimer->once(REPLYTIMEOUT, sendReply, questionContext)

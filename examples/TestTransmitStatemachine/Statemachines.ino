@@ -53,11 +53,14 @@ void emitRetry(void * data){
 
 void initResendTimer(int token, void * data){
   Serial.println("send message");
+  message.uptime = millis();
+  CONTEXT->senderReceiver.send((uint8_t *)&message, sizeof(message_t));
   CONTEXT->resendTimeout = CONTEXT->resendTimeout + RESEND_BACKOFF;
   CONTEXT->resendTimer.once(CONTEXT->resendTimeout, emitRetry, data);
 
 }
 void initRestartTimer(int token, void * data){
+  Serial.println("Wait");
   CONTEXT->resendTimeout = RESEND_TIMEOUT;
   CONTEXT->restartTimer.once(RESTART_TIMEOUT, emitRetry, data);
 }
