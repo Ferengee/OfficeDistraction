@@ -2,7 +2,7 @@
 #define PWMCONTROL_H
 #include <Arduino.h>
 
-enum {OFF, ON, SINE, SQUARE};
+enum { ON, OFF, SINE, SQUARE};
 
 class PWMControl
 {
@@ -14,6 +14,7 @@ public:
     set(SINE, offset, duration, amplitude, period);
   }
   void square(uint8_t offset, uint8_t duration, uint8_t amplitude, uint8_t period){ 
+    _shift = 128;
     set(SQUARE, offset, duration, amplitude, period);
   }
   void off(){ set(OFF, 0,0,0,0); }

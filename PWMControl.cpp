@@ -40,7 +40,7 @@ void PWMControl::set(uint8_t shape, uint8_t offset, uint8_t duration, uint8_t am
       analogWrite(_pin, 0);
       break;
     case ON:
-      analogWrite(_pin, _amplitude);
+      analogWrite(_pin, amplitude);
       break;    
   }
   _shape = shape;
