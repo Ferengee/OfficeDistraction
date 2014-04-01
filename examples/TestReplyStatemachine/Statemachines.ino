@@ -47,7 +47,14 @@ void emitTimeout(void * data){
 
 void emitNextQuestion(void * data){
   log("emitting next question");
+  Serial.println("Alarm:off");
+
   CONTEXT->channel.send(NEXTQUESTION, data);
+}
+
+void notifySerial(int token, void * data){
+  Serial.print("Winner:");
+  Serial.println(CONTEXT->first->senderId);
 }
 
 void acceptAnswer(int token, void * data){
@@ -55,7 +62,7 @@ void acceptAnswer(int token, void * data){
   swapMessageBuffer(CONTEXT);
 
   log("Alarm");
-
+  Serial.println("Alarm:on");
   CONTEXT->lifecycleTimer.once(LIFECYCLE_TIMEOUT, emitNextQuestion, data);
   CONTEXT->settleTimer.once(WINNER_SETTLED, emitTimeout, data);
   CONTEXT->replyScheduler.once(RESEND_TIMEOUT, sendReply, data);
@@ -99,6 +106,9 @@ void setup_machines(){
 /*  do we have a winner */
   winnerUnknown.on(l++, TIMEOUT)->to(winnerKnown);
   winnerKnown.on(l++, NEXTQUESTION)->to(winnerUnknown);
+
+/* winner */
+  winnerKnown.enterfunc = notifySerial;
 
 /*  message cycle functions */
   oneAnswer.enterfunc = acceptAnswer;

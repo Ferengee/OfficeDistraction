@@ -3,7 +3,7 @@
 #include <EventChannel.h>
 #include <VirtualWire.h>
 #include <RFSenderReceiver.h>
-//#include <PWMControl.h>
+#include <PWMControl.h>
 
 /* config sender id per button */
 #define SENDER_ID 4
@@ -57,16 +57,21 @@ typedef struct {
   Scheduler silencePoll;
   RFSenderReceiver senderReceiver;
   Machine * messageCycle;
+  PWMControl led;
 
 } process_context_t;
 
 process_context_t context;
+
+
+
 void setup_machines();
 
 void setup(){
   Serial.println((int)millis());
   log("setup");
-  digitalWrite(POWER_PIN, HIGH);
+  
+  
   context.senderReceiver.init(11,12, 2000);
   message.senderId = SENDER_ID;
   message.messageType = ANSWER;
@@ -77,11 +82,15 @@ void setup(){
   context.schedulers.attach(context.lifecycleTimer);
   context.schedulers.attach(context.silencePoll);
   context.messageCycle = &messageCycle;
+  
+  context.led.init(LED_PIN);
+  context.led.sine(0, 120, 255, 64);
   setup_machines(); 
   
 }
 void loop(){
   context.schedulers.trigger();
+  context.led.update();
    if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
     if(context.senderReceiver.get_message((uint8_t *)&reply, &len)){

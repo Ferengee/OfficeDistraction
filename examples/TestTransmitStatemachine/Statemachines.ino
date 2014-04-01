@@ -27,9 +27,11 @@ void initLifeCycle(int token, void * data){
 void initShutdownTimer(int token, void * data){
   CONTEXT->messageCycle->stop();
   if(token == WIN){
-    digitalWrite(LED_PIN, HIGH);
+    Serial.println("on");
+    CONTEXT->led.on(255);
   } else {
-    digitalWrite(LED_PIN, LOW);
+    Serial.println("off");
+    CONTEXT->led.square(0, 120, 200, 20);
   }
   CONTEXT->lifecycleTimer.once(SHUTDOWN_TIMEOUT, emitLifecycleTimeOut, data);
 }
@@ -37,6 +39,7 @@ void powerOff(int token, void * data){
   Serial.println("power off");
 
   digitalWrite(POWER_PIN, LOW);
+
   exit(0);
 }
 
