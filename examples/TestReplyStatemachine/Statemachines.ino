@@ -1,14 +1,29 @@
 #define CONTEXT ((process_context_t *)data)
 
 
+void printMessage(message_t * m){
+  Serial.print("id :");
+  Serial.print(m->senderId);
+  Serial.print(",uptime :");
+  Serial.print((int)m->uptime);
+  Serial.print(",type :");
+  Serial.println((int)m->messageType);
+ 
+}
+
 void sendReply(void * data){
-  Serial.println("Sending Reply");
+  log("Sending Reply");
+ 
   if(CONTEXT->winnerCycle->getCurrentState() == &winnerKnown){
     CONTEXT->first->messageType = WINNER;
   } else {
     CONTEXT->first->messageType = CURRENTLEAD;
   }
-  CONTEXT->senderReceiver.send((uint8_t *)CONTEXT->first, sizeof(message_t));
+  printMessage(CONTEXT->first);
+  message_t * output = &CONTEXT->outputbuffer;
+  memcpy(output, CONTEXT->first, sizeof(message_t));
+  output->uptime = millis() - output->uptime; 
+  CONTEXT->senderReceiver.send((uint8_t *)output, sizeof(message_t));
 
   //CONTEXT->channel.send(LIFECYCLETIMEOUT, data);  
 }
@@ -26,13 +41,22 @@ void swapMessageBuffer(process_context_t * context){
   - reset reply scheduler 
   - signal alarm */
 void emitTimeout(void * data){
-  Serial.println("emitting timeout");
+  log("emitting timeout");
   CONTEXT->channel.send(TIMEOUT, data);
 }
 
+void emitNextQuestion(void * data){
+  log("emitting next question");
+  CONTEXT->channel.send(NEXTQUESTION, data);
+}
+
 void acceptAnswer(int token, void * data){
-  Serial.println("Alarm");
+  CONTEXT->buffer->uptime = millis() - CONTEXT->buffer->uptime;
   swapMessageBuffer(CONTEXT);
+
+  log("Alarm");
+
+  CONTEXT->lifecycleTimer.once(LIFECYCLE_TIMEOUT, emitNextQuestion, data);
   CONTEXT->settleTimer.once(WINNER_SETTLED, emitTimeout, data);
   CONTEXT->replyScheduler.once(RESEND_TIMEOUT, sendReply, data);
 }
@@ -41,8 +65,12 @@ void acceptAnswer(int token, void * data){
   - reset reply scheduler
   - update message in context (if needed) */
 void updateAnswer(int token, void * data){
-  Serial.println("Update Answer");
-  if(CONTEXT->buffer->uptime < CONTEXT->first->uptime){
+  /* convert to relative uptime (relative to ours) */
+  CONTEXT->buffer->uptime = millis() - CONTEXT->buffer->uptime;
+  log("--- Update Answer");
+
+  /* compare the time the peers started */
+  if(CONTEXT->first->uptime >= CONTEXT->buffer->uptime){
     swapMessageBuffer(CONTEXT);
   }
   CONTEXT->replyScheduler.once(RESEND_TIMEOUT, sendReply, data);
@@ -51,7 +79,9 @@ void updateAnswer(int token, void * data){
 /*  initQuestionContext
   - wipe answer from context */
 void initQuestionContext(int token, void * data){
-  Serial.println("Setup context");
+  log("Setup context");
+  CONTEXT->buffer->senderId = 0;
+  CONTEXT->first->senderId = 0;
 }
 
 

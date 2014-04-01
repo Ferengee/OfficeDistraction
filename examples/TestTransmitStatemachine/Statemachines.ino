@@ -2,6 +2,17 @@
 
 #define CONTEXT ((process_context_t *)data)
 
+void printMessage(message_t * m){
+  log("print message");
+  Serial.print("id :");
+  Serial.print(m->senderId);
+  Serial.print(",uptime :");
+  Serial.print((int)m->uptime);
+  Serial.print(",type :");
+  Serial.println((int)m->messageType);
+ 
+}
+
 void emitLifecycleTimeOut(void * data){
   Serial.println("lifecycle Timeout");
 
@@ -52,10 +63,11 @@ void emitRetry(void * data){
 }
 
 void initResendTimer(int token, void * data){
-  Serial.println("send message");
   message.uptime = millis();
+  printMessage(&message);
+
   CONTEXT->senderReceiver.send((uint8_t *)&message, sizeof(message_t));
-  CONTEXT->resendTimeout = CONTEXT->resendTimeout + RESEND_BACKOFF;
+  CONTEXT->resendTimeout = CONTEXT->resendTimeout + (RESEND_BACKOFF * mrandom(0,4)) ;
   CONTEXT->resendTimer.once(CONTEXT->resendTimeout, emitRetry, data);
 
 }

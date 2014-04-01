@@ -3,20 +3,26 @@
 #include <EventChannel.h>
 #include <VirtualWire.h>
 #include <RFSenderReceiver.h>
+//#include <PWMControl.h>
 
 /* config sender id per button */
-#define SENDER_ID 1
+#define SENDER_ID 4
 #define POWER_PIN 4
 #define LED_PIN 13
 #define SILENCE_COUNT 4
-#define RESEND_TIMEOUT 400
-#define RESEND_BACKOFF 100
+#define RESEND_TIMEOUT 600
+#define RESEND_BACKOFF 60
 #define RESTART_TIMEOUT 3000
 #define LOSE_TIMEOUT 10000
-#define SHUTDOWN_TIMEOUT 5000
+#define SHUTDOWN_TIMEOUT 10000
 #define SILENCE_POLL 10
 /*
  * Read the Statemachines tab to see the state machine configuration
+ * 
+ */
+
+/*
+ * TODO: use pwm control to make the light glow
  * 
  */
 enum TransitionEvents {WIN, LOSE, LIFECYCLETIMEOUT, SILENCE, RETRY, ACKNOWLEDGE};
@@ -58,6 +64,8 @@ process_context_t context;
 void setup_machines();
 
 void setup(){
+  Serial.println((int)millis());
+  log("setup");
   digitalWrite(POWER_PIN, HIGH);
   context.senderReceiver.init(11,12, 2000);
   message.senderId = SENDER_ID;
@@ -77,12 +85,20 @@ void loop(){
    if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
     if(context.senderReceiver.get_message((uint8_t *)&reply, &len)){
-      if(reply.senderId != message.senderId){
-        Serial.println("not us");
+      if(reply.senderId == 0){
+        Serial.print("drop message (id == 0)");
+      } else if(reply.senderId != message.senderId){
+        log("uptime: ");
+        Serial.println((int)millis());
         /* not us */
         if(reply.uptime > millis() || reply.messageType == WINNER){
+          log("not us: LOSE");
+          Serial.print((int)reply.uptime);
+          Serial.print(" > ");
+          Serial.println((int)millis());
           context.channel.send(LOSE, &context);
         } else {
+           log("not us: ACKNOWLEDGE");
           context.channel.send(ACKNOWLEDGE, &context);
         }
         
@@ -90,11 +106,11 @@ void loop(){
 
         /* us */
         if(reply.messageType == WINNER){
-          Serial.println("us:WINNER");
+          log("us:WINNER");
 
           context.channel.send(WIN, &context);
         } else {
-          Serial.println("us:ACKNOWLEDGE");
+          log("us:ACKNOWLEDGE");
 
           context.channel.send(ACKNOWLEDGE, &context);
         }
