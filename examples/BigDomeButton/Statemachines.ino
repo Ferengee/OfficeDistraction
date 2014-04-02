@@ -19,7 +19,10 @@ void initShutdownTimer(int token, void * data){
   CONTEXT->lifecycleTimer.once(SHUTDOWN_TIMEOUT, emitLifecycleTimeOut, data);
 }
 void powerOff(int token, void * data){
-  digitalWrite(POWER_PIN, LOW);
+  /* drain the voltage which keeps the primary mosfet open
+    using a secondary mosfet
+  */
+  digitalWrite(POWER_PIN, HIGH);
   exit(0);
 }
 

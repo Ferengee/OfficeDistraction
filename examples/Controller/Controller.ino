@@ -73,7 +73,9 @@ void testChannelSendMessage(void * data){
 }
  --- */
 void setup(){
-  context.senderReceiver.init(11,12, 2000);
+  Serial.begin(9600);
+  
+  context.senderReceiver.init(12,11, 2000);
 
   context.schedulers.attach(context.replyScheduler);
   context.schedulers.attach(context.settleTimer);
@@ -88,6 +90,7 @@ void setup(){
   testScheduler.every(3000, testChannelSendMessage, &context);
    --- */
   setup_machines(); 
+  Serial.println("Ready");
 }
 void loop(){
   context.schedulers.trigger();

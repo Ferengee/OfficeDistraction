@@ -8,7 +8,7 @@
 /* config sender id per button */
 #define SENDER_ID 4
 #define POWER_PIN 4
-#define LED_PIN 13
+#define LED_PIN 6
 #define SILENCE_COUNT 4
 #define RESEND_TIMEOUT 600
 #define RESEND_BACKOFF 60
@@ -68,7 +68,10 @@ process_context_t context;
 void setup_machines();
 
 void setup(){
-  context.senderReceiver.init(11,12, 2000);
+  pinMode(POWER_PIN, OUTPUT);
+  digitalWrite(POWER_PIN, LOW);
+
+  context.senderReceiver.init(12,11, 2000);
   message.senderId = SENDER_ID;
   message.messageType = ANSWER;
   
