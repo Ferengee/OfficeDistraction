@@ -2,18 +2,19 @@
 
 
 void printMessage(message_t * m){
-  Serial.print("id :");
+  Serial.print("id:");
   Serial.print(m->senderId);
-  Serial.print(",uptime :");
+  Serial.print(", uptime:");
   Serial.print((int)m->uptime);
-  Serial.print(",type :");
+  Serial.print(", type:");
   Serial.println((int)m->messageType);
  
 }
 
 void sendReply(void * data){
   log("Sending Reply");
- 
+  printMessage(CONTEXT->first);
+
   if(CONTEXT->winnerCycle->getCurrentState() == &winnerKnown){
     CONTEXT->first->messageType = WINNER;
   } else {
@@ -29,11 +30,11 @@ void sendReply(void * data){
 }
 
 
-void swapMessageBuffer(process_context_t * context){
+void swapMessageBuffer(void * data){
   message_t * tmp;
-  tmp = context->first;
-  context->first = context->buffer;
-  context->buffer = tmp;
+  tmp = CONTEXT->first;
+  CONTEXT->first = CONTEXT->buffer;
+  CONTEXT->buffer = tmp;
 }
 
 /*  acceptAnswer 
@@ -47,6 +48,7 @@ void emitTimeout(void * data){
 
 void emitNextQuestion(void * data){
   log("emitting next question");
+  CONTEXT->alarm.off();
   Serial.println("Alarm:off");
 
   CONTEXT->channel.send(NEXTQUESTION, data);
@@ -60,7 +62,7 @@ void notifySerial(int token, void * data){
 void acceptAnswer(int token, void * data){
   CONTEXT->buffer->uptime = millis() - CONTEXT->buffer->uptime;
   swapMessageBuffer(CONTEXT);
-
+  CONTEXT->alarm.on();
   log("Alarm");
   Serial.println("Alarm:on");
   CONTEXT->lifecycleTimer.once(LIFECYCLE_TIMEOUT, emitNextQuestion, data);
@@ -73,8 +75,12 @@ void acceptAnswer(int token, void * data){
   - update message in context (if needed) */
 void updateAnswer(int token, void * data){
   /* convert to relative uptime (relative to ours) */
+  log ("--- ");
+  printMessage(CONTEXT->buffer);
   CONTEXT->buffer->uptime = millis() - CONTEXT->buffer->uptime;
-  log("--- Update Answer");
+  printMessage(CONTEXT->buffer);
+
+  log(" Update Answer ---");
 
   /* compare the time the peers started */
   if(CONTEXT->first->uptime >= CONTEXT->buffer->uptime){

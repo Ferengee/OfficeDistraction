@@ -3,6 +3,7 @@
 #include <EventChannel.h>
 #include <VirtualWire.h>
 #include <RFSenderReceiver.h>
+#include <Relay.h>
 
 #define LED_PIN 13
 #define SILENCE_COUNT 4
@@ -13,6 +14,7 @@
 
 #define MY_ID 0
 
+#define ALARM_PIN 4
 #define CONTEXT ((process_context_t *)data)
 
 
@@ -57,6 +59,8 @@ typedef struct {
   message_t * buffer;
   message_t outputbuffer;
   
+  Relay alarm;
+  
 } process_context_t;
 
 process_context_t context;
@@ -84,7 +88,7 @@ void setup(){
   context.winnerCycle = &winnerCycle;
   context.first = message_buffer;
   context.buffer = message_buffer + 1;
-  
+  context.alarm.init(ALARM_PIN);
   /* testing
   context.schedulers.attach(testScheduler);
   testScheduler.every(3000, testChannelSendMessage, &context);
@@ -96,8 +100,14 @@ void loop(){
   context.schedulers.trigger();
   if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
+    context.buffer->senderId = 0;
+    context.buffer->messageType = 0;
+    context.buffer->uptime = 0;
+
     if(context.senderReceiver.get_message((uint8_t *)context.buffer, &len)){
-      context.channel.send(MESSAGE, &context);
+      if(len == sizeof(message_t)){
+        context.channel.send(MESSAGE, &context);
+      }
     }
   }
   delay(5);

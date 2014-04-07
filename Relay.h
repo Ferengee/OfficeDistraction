@@ -6,6 +6,9 @@ class Relay
 {
 public:
   Relay(int commPin);
+  Relay();
+
+  void init(int commPin);
   void toggle();
   void on();
   void off();

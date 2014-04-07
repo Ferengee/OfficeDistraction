@@ -93,7 +93,8 @@ void loop(){
    if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
     if(context.senderReceiver.get_message((uint8_t *)&reply, &len)){
-      if(reply.senderId == 0){
+      if(len != sizeof(message_t) || reply.senderId == 0){
+        //pass
       } else if(reply.senderId != message.senderId){
         /* not us */
         if(reply.uptime > millis() || reply.messageType == WINNER){

@@ -2,11 +2,21 @@
 
 Relay::Relay(int commPin)
 {
+  init(commPin);
+  
+}
+Relay::Relay()
+{
+
+}
+
+void Relay::init(int commPin)
+{
   pin = commPin; 
   pinMode(pin, OUTPUT);
   state = LOW;
-  
 }
+
 
 void Relay::on()
 {

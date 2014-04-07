@@ -31,6 +31,7 @@ void emitTimeout(void * data){
 }
 
 void emitNextQuestion(void * data){
+  CONTEXT->alarm.off();
   Serial.println("Alarm:off");
 
   CONTEXT->channel.send(NEXTQUESTION, data);
@@ -44,6 +45,7 @@ void notifySerial(int token, void * data){
 void acceptAnswer(int token, void * data){
   CONTEXT->buffer->uptime = millis() - CONTEXT->buffer->uptime;
   swapMessageBuffer(CONTEXT);
+  CONTEXT->alarm.on();
 
   Serial.println("Alarm:on");
   CONTEXT->lifecycleTimer.once(LIFECYCLE_TIMEOUT, emitNextQuestion, data);

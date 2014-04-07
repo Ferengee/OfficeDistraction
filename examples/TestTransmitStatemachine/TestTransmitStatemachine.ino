@@ -6,7 +6,7 @@
 #include <PWMControl.h>
 
 /* config sender id per button */
-#define SENDER_ID 4
+#define SENDER_ID 7
 #define POWER_PIN 4
 #define LED_PIN 13
 #define SILENCE_COUNT 4
@@ -68,11 +68,10 @@ process_context_t context;
 void setup_machines();
 
 void setup(){
-  Serial.println((int)millis());
-  log("setup");
-  
-  
-  context.senderReceiver.init(11,12, 2000);
+  pinMode(POWER_PIN, OUTPUT);
+  digitalWrite(POWER_PIN, LOW);
+
+  context.senderReceiver.init(12,11, 2000);
   message.senderId = SENDER_ID;
   message.messageType = ANSWER;
   
@@ -94,8 +93,10 @@ void loop(){
    if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
     if(context.senderReceiver.get_message((uint8_t *)&reply, &len)){
-      if(reply.senderId == 0){
-        Serial.print("drop message (id == 0)");
+      if(len != sizeof(message_t)){
+        Serial.println("ignored short message.");
+      }else if(reply.senderId == 0){
+        Serial.println("drop message (id == 0)");
       } else if(reply.senderId != message.senderId){
         log("uptime: ");
         Serial.println((int)millis());

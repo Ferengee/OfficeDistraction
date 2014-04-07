@@ -22,6 +22,7 @@ void powerOff(int token, void * data){
   /* drain the voltage which keeps the primary mosfet open
     using a secondary mosfet
   */
+  CONTEXT->led.off();
   digitalWrite(POWER_PIN, HIGH);
   exit(0);
 }

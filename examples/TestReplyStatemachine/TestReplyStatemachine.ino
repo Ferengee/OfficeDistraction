@@ -3,6 +3,7 @@
 #include <EventChannel.h>
 #include <VirtualWire.h>
 #include <RFSenderReceiver.h>
+#include <Relay.h>
 
 #define LED_PIN 13
 #define SILENCE_COUNT 4
@@ -12,7 +13,7 @@
 #define LIFECYCLE_TIMEOUT 10000
 
 #define MY_ID 0
-
+#define ALARM_PIN 4
 #define CONTEXT ((process_context_t *)data)
 
 
@@ -57,6 +58,8 @@ typedef struct {
   message_t * buffer;
   message_t outputbuffer;
   
+  Relay alarm;
+  
 } process_context_t;
 
 process_context_t context;
@@ -64,6 +67,7 @@ process_context_t context;
   message_t message_buffer[2];
   
 void setup_machines();
+void printMessage(message_t * m);
 
 /* testing 
 Scheduler testScheduler;
@@ -73,7 +77,9 @@ void testChannelSendMessage(void * data){
 }
  --- */
 void setup(){
-  context.senderReceiver.init(11,12, 2000);
+  Serial.begin(9600);
+  
+  context.senderReceiver.init(12,11, 2000);
 
   context.schedulers.attach(context.replyScheduler);
   context.schedulers.attach(context.settleTimer);
@@ -82,20 +88,37 @@ void setup(){
   context.winnerCycle = &winnerCycle;
   context.first = message_buffer;
   context.buffer = message_buffer + 1;
-  
+  context.alarm.init(ALARM_PIN);
   /* testing
   context.schedulers.attach(testScheduler);
   testScheduler.every(3000, testChannelSendMessage, &context);
    --- */
   setup_machines(); 
+  
+  Serial.println("Ready");
 }
 void loop(){
   context.schedulers.trigger();
   if (context.senderReceiver.have_message()){
     uint8_t len = sizeof(message_t);
+    context.buffer->senderId = 0;
+    context.buffer->messageType = 0;
+    context.buffer->uptime = 0;
+    log("incomming message");
+    Serial.print(len);
+        Serial.print(":");
+
     if(context.senderReceiver.get_message((uint8_t *)context.buffer, &len)){
-      context.channel.send(MESSAGE, &context);
+      if(len != sizeof(message_t)){
+        Serial.println("ignored short message.");
+      } else {
+        context.channel.send(MESSAGE, &context);
+      }
+    }else{
+      log("get message failed");
+     
     }
+ 
   }
   delay(5);
 }
